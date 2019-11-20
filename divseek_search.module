@@ -1,0 +1,22 @@
+<?php
+
+/**
+ * @file
+ * General functions relating to this module.
+ * This file will not include the searches themselves.
+ */
+require_once 'includes/GermplasmAccessionSearch.inc';
+
+/**
+ * Implement hook_chado_custom_search().
+ *
+ * This hook simply lists the machine name of the searches so that we can find
+ * the info hook. We've done this for performance reasons.
+ */
+function divseek_search_chado_custom_search() {
+  $searches = [];
+
+  $searches['GermplasmAccessionSearch'] = 'Germplasm Accessions';
+
+  return $searches;
+}

@@ -1,0 +1,7 @@
+name = DivSeek Searches
+description = Provides custom searches for Breeding focused sites.
+core = 7.x
+package = Chado Custom Search
+dependencies[] = tripal
+dependencies[] = tripal_chado
+dependencies[] = chado_custom_search

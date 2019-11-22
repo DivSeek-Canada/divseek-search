@@ -156,8 +156,70 @@ class GermplasmAccessionSearch extends ChadoCustomSearch {
   public function form($form, $form_state) {
     $form = parent::form($form, $form_state);
 
-    // Move name to the bottom.
+    // We want a drop-down for:
+    //---------------------------------
+    $term_ids = $this->getTypeIDS();
+
+    // -- Genus.
+    $options = chado_query(
+      "SELECT genus FROM {organism}
+       WHERE organism_id IN (SELECT organism_id FROM {stock})")->fetchAllKeyed(0,0);
+    $form['genus']['#type'] = 'select';
+    $form['genus']['#options'] = $options;
+    $form['genus']['#empty_option'] = '- Select -';
+
+    // -- Biological Status.
+    $options = chado_query(
+      "SELECT value FROM {stockprop}
+       WHERE type_id = :id
+       GROUP BY value",
+       [':id' => $term_ids['biological_status']])->fetchAllKeyed(0,0);
+    $form['biological_status']['#type'] = 'select';
+    $form['biological_status']['#options'] = $options;
+    $form['biological_status']['#empty_option'] = '- Select -';
+
+    // -- Origin.
+    $options = chado_query(
+      "SELECT value FROM {stockprop}
+       WHERE type_id = :id
+       GROUP BY value",
+       [':id' => $term_ids['origin']])->fetchAllKeyed(0,0);
+    $form['origin']['#type'] = 'select';
+    $form['origin']['#options'] = $options;
+    $form['origin']['#empty_option'] = '- Select -';
+
+    // -- Source Institute.
+    $options = chado_query(
+      "SELECT value FROM {stockprop}
+       WHERE type_id = :id
+       GROUP BY value",
+       [':id' => $term_ids['source_institute']])->fetchAllKeyed(0,0);
+    $form['source_institute']['#type'] = 'select';
+    $form['source_institute']['#options'] = $options;
+    $form['source_institute']['#empty_option'] = '- Select -';
+
+    // Scaffold our fields into rows.
+    //---------------------------------
+    // Genus     |  Species            |
+    // Status | Institute  | Country   |
+    // Name                            |
+    //---------------------------------
+
+    // First ensure they are in the right order.
+    $form['genus']['#weight'] = -11;
+    $form['species']['#weight'] = -10;
+    $form['biological_status']['#weight'] = -6;
+    $form['source_institute']['#weight'] = -5;
+    $form['origin']['#weight'] = -4;
     $form['name']['#weight'] = 10;
+
+    // Now start grouping each row.
+    $form['genus']['#prefix'] = '<div class="search-row">';
+    $form['species']['#suffix'] = '</div>';
+    $form['biological_status']['#prefix'] = '<div class="search-row">';;
+    $form['origin']['#suffix'] = '</div>';
+    $form['name']['#prefix'] = '<div class="search-row">';;
+    $form['name']['#suffix'] = '</div>';
 
     return $form;
   }
@@ -207,7 +269,10 @@ class GermplasmAccessionSearch extends ChadoCustomSearch {
       LEFT JOIN {stockprop} pedigree ON pedigree.stock_id=s.stock_id AND pedigree.type_id=:pedigree_type
       LEFT JOIN {stockprop} status ON status.stock_id=s.stock_id AND status.type_id=:biological_status_type ";
 
-    $where = [];
+    $where = [
+      // Restrict the dataset to only accessions.
+      "s.type_id IN (SELECT cvterm_id FROM {cvterm} WHERE name~'accession')"
+    ];
     $joins = [];
 
     $args[':source_institute_type'] = $term_ids['source_institute'];

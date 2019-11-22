@@ -1,0 +1,11 @@
+
+.search-row {
+  display: flex;
+}
+.form-item {
+  flex-grow: 1;
+  margin-left: 15px;
+}
+select {
+  width: 100%;
+}

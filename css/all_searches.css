@@ -1,11 +1,15 @@
 
-.search-row {
+#chado-custom-search-form .search-row {
   display: flex;
 }
-.search-row .form-item {
+#chado-custom-search-form .search-row .form-item {
   flex-grow: 1;
   margin-left: 15px;
 }
-.search-row select {
+#chado-custom-search-form .search-row select {
   width: 100%;
+}
+#chado-custom-search-form #edit-submit {
+  margin-left: 15px;
+  margin-top: 15px;
 }

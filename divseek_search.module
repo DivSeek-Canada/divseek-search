@@ -6,6 +6,7 @@
  * This file will not include the searches themselves.
  */
 require_once 'includes/GermplasmAccessionSearch.inc';
+require_once 'includes/TraitSearch.inc';
 
 /**
  * Implement hook_chado_custom_search().
@@ -17,6 +18,7 @@ function divseek_search_chado_custom_search() {
   $searches = [];
 
   $searches['GermplasmAccessionSearch'] = 'Germplasm Accessions';
+  $searches['TraitSearch'] = 'Phenotypic Traits';
 
   return $searches;
 }

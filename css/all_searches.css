@@ -25,6 +25,7 @@
 #chado-custom-search-form .result-row .result-row-trait {
   padding: 5px 15px;
   border-right: 1px solid #E8E8E8;
+  flex: 0 0 100px;
 }
 #chado-custom-search-form .result-row .result-row-body {
   padding: 5px 15px;
@@ -33,10 +34,10 @@
   background-color: #d3d6b1; // green
 }
 #chado-custom-search-form .result-row .result-row-trait.trait2 {
-  background-color: #c5c2ce; // purple
+  background-color: #e8e1c9; // yellow
 }
 #chado-custom-search-form .result-row .result-row-trait.trait3 {
-  background-color: #e8e1c9; // yellow
+  background-color: #c5c2ce; // purple
 }
 #chado-custom-search-form .result-row .result-row-trait.trait4 {
   background-color: #d4dadd; // blue

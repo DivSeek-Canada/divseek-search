@@ -228,6 +228,7 @@ class TraitSearch extends ChadoCustomSearch {
     $form['results'] = [
       '#type' => 'markup',
       '#tree' => TRUE,
+      '#weight' => 100,
     ];
 
     // For each result...

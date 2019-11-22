@@ -13,3 +13,34 @@
   margin-left: 15px;
   margin-top: 15px;
 }
+
+/**
+ * Trait Search Results
+ */
+#chado-custom-search-form .result-row {
+  display: flex;
+  border: 1px solid #E8E8E8;
+  padding: 0px;
+}
+#chado-custom-search-form .result-row .result-row-trait {
+  padding: 5px 15px;
+  border-right: 1px solid #E8E8E8;
+}
+#chado-custom-search-form .result-row .result-row-body {
+  padding: 5px 15px;
+}
+#chado-custom-search-form .result-row .result-row-trait.trait1 {
+  background-color: #d3d6b1; // green
+}
+#chado-custom-search-form .result-row .result-row-trait.trait2 {
+  background-color: #c5c2ce; // purple
+}
+#chado-custom-search-form .result-row .result-row-trait.trait3 {
+  background-color: #e8e1c9; // yellow
+}
+#chado-custom-search-form .result-row .result-row-trait.trait4 {
+  background-color: #d4dadd; // blue
+ // blue}
+#chado-custom-search-form .result-row .result-row-trait.trait5 {
+  background-color: #dbc5c7; // red
+}

@@ -2,10 +2,10 @@
 .search-row {
   display: flex;
 }
-.form-item {
+.search-row .form-item {
   flex-grow: 1;
   margin-left: 15px;
 }
-select {
+.search-row select {
   width: 100%;
 }

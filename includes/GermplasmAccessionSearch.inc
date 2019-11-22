@@ -163,7 +163,8 @@ class GermplasmAccessionSearch extends ChadoCustomSearch {
     // -- Genus.
     $options = chado_query(
       "SELECT genus FROM {organism}
-       WHERE organism_id IN (SELECT organism_id FROM {stock})")->fetchAllKeyed(0,0);
+       WHERE organism_id IN (SELECT organism_id FROM {stock})
+       ORDER BY genus ASC")->fetchAllKeyed(0,0);
     $form['genus']['#type'] = 'select';
     $form['genus']['#options'] = $options;
     $form['genus']['#empty_option'] = '- Select -';
@@ -172,7 +173,8 @@ class GermplasmAccessionSearch extends ChadoCustomSearch {
     $options = chado_query(
       "SELECT value FROM {stockprop}
        WHERE type_id = :id
-       GROUP BY value",
+       GROUP BY value
+       ORDER BY value ASC",
        [':id' => $term_ids['biological_status']])->fetchAllKeyed(0,0);
     $form['biological_status']['#type'] = 'select';
     $form['biological_status']['#options'] = $options;
@@ -182,7 +184,8 @@ class GermplasmAccessionSearch extends ChadoCustomSearch {
     $options = chado_query(
       "SELECT value FROM {stockprop}
        WHERE type_id = :id
-       GROUP BY value",
+       GROUP BY value
+       ORDER BY value ASC",
        [':id' => $term_ids['origin']])->fetchAllKeyed(0,0);
     $form['origin']['#type'] = 'select';
     $form['origin']['#options'] = $options;
@@ -192,7 +195,8 @@ class GermplasmAccessionSearch extends ChadoCustomSearch {
     $options = chado_query(
       "SELECT value FROM {stockprop}
        WHERE type_id = :id
-       GROUP BY value",
+       GROUP BY value
+       ORDER BY value ASC",
        [':id' => $term_ids['source_institute']])->fetchAllKeyed(0,0);
     $form['source_institute']['#type'] = 'select';
     $form['source_institute']['#options'] = $options;

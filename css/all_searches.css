@@ -17,6 +17,9 @@
 /**
  * Trait Search Results
  */
+#chado-custom-search-form .results {
+  margin: 30px 0px;
+}
 #chado-custom-search-form .result-row {
   display: flex;
   border: 1px solid #E8E8E8;
@@ -34,14 +37,14 @@
   background-color: #d3d6b1; // green
 }
 #chado-custom-search-form .result-row .result-row-trait.trait2 {
-  background-color: #e8e1c9; // yellow
+  background-color: #e8dda9; // yellow
 }
 #chado-custom-search-form .result-row .result-row-trait.trait3 {
   background-color: #c5c2ce; // purple
 }
 #chado-custom-search-form .result-row .result-row-trait.trait4 {
   background-color: #d4dadd; // blue
- // blue}
+}
 #chado-custom-search-form .result-row .result-row-trait.trait5 {
   background-color: #dbc5c7; // red
 }

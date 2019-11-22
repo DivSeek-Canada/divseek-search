@@ -229,6 +229,8 @@ class TraitSearch extends ChadoCustomSearch {
       '#type' => 'markup',
       '#tree' => TRUE,
       '#weight' => 100,
+      '#prefix' => '<div class="results">',
+      '#suffix' => '</div>',
     ];
 
     // For each result...

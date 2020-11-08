@@ -14,6 +14,43 @@
   margin-top: 15px;
 }
 
+#chado-custom-search-form label {
+  display: block;
+}
+
+.container-inline {
+  display: inline-flex;
+  width: 100%;
+}
+.container-inline .form-item {
+  flex-grow: 1;
+  flex-basis: 25px;
+  margin: 5px;
+}
+.container-inline .form-item-phenotypic-value-trait {
+  flex-grow: 4;
+  margin-left: 0;
+}
+.container-inline .form-item-phenotypic-value-units {
+  flex-grow: 2;
+  margin-right: 0;
+}
+
+.form-item-phenotypic-value {
+  margin-left: 15px;
+}
+.form-item-phenotypic-value .form-item-phenotypic-value-is {
+  padding: 6px;
+  flex-grow: 0;
+  width: 15px;
+}
+.form-item-phenotypic-value .form-item-phenotypic-value-operator {
+  flex-grow: 0;
+}
+.form-item-phenotypic-value .form-item-phenotypic-value-operator select {
+  width: 50px;
+}
+
 /**
  * Trait Search Results
  */

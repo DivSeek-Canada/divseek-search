@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Provides a search for
  *
@@ -131,6 +132,10 @@ class GermplasmAccessionSearch extends ChadoCustomSearch {
         'title' => 'Source Institute',
         'help' => 'The institute the germplasm was developed or collected by.'
       ],
+      'phenotypic_value' => [
+        'title' => 'Phenotype',
+        'help' => 'Germplasm whose collected phenotypic data matches the criteria.'
+      ],
       'name' => [
         'title' => 'Name',
         'help' => 'The name or accession of the germplasm (e.g. CDC Redberry; partial names are accepted).',
@@ -156,6 +161,30 @@ class GermplasmAccessionSearch extends ChadoCustomSearch {
   public function form($form, $form_state) {
     $form = parent::form($form, $form_state);
 
+    // Get Default Values.
+    //---------------------------------
+    $q = drupal_get_query_parameters();
+    if (isset($form_state['values'])) {
+      $genus_default = $form_state['values']['genus'];
+      $species_default = $form_state['values']['species'];
+      $phenovalue_default = $form_state['values']['phenotypic_value'];
+    }
+    elseif (isset($q['genus'])) {
+      $genus_default = $q['genus'];
+      $species_default = $q['species'];
+      $phenovalue_default = $q['phenotypic_value'];
+    }
+    else {
+      $genus_default = NULL;
+      $species_default = NULL;
+      $phenovalue_default = NULL;
+    }
+
+    $form['genus']['#default_value'] = $genus_default;
+    $form['species']['#default_value'] = $species_default;
+    $form['phenotypic_value']['#default_value'] = $phenovalue_default;
+
+
     // We want a drop-down for:
     //---------------------------------
     $term_ids = $this->getTypeIDS();
@@ -168,6 +197,7 @@ class GermplasmAccessionSearch extends ChadoCustomSearch {
     $form['genus']['#type'] = 'select';
     $form['genus']['#options'] = $options;
     $form['genus']['#empty_option'] = '- Select -';
+
 
     // -- Biological Status.
     $options = chado_query(
@@ -224,6 +254,11 @@ class GermplasmAccessionSearch extends ChadoCustomSearch {
     $form['origin']['#suffix'] = '</div>';
     $form['name']['#prefix'] = '<div class="search-row">';;
     $form['name']['#suffix'] = '</div>';
+
+    $form['phenotypic_value']['#type'] = 'phenotypic_value';
+    $form['phenotypic_value']['#genus'] = $genus_default;
+    $form['phenotypic_value']['#description'] = '';
+    // @debug dpm($form_state, 'Germplasm Search: form state');
 
     return $form;
   }
@@ -314,6 +349,18 @@ class GermplasmAccessionSearch extends ChadoCustomSearch {
       $args[':biological_status'] = $filter_results['biological_status'];
     }
 
+    // -- Phenotypic Value.
+    if ($filter_results['phenotypic_value']['trait'] != '') {
+      $where[] = '
+      s.stock_id IN (
+        SELECT stock_id FROM {phenotype}
+        WHERE attr_id = :trait AND unit_id = :unit
+        AND value '.$filter_results['phenotypic_value']['operator'].' :value)';
+      $args[':trait'] = $filter_results['phenotypic_value']['trait'];
+      $args[':unit'] = $filter_results['phenotypic_value']['unit'];
+      $args[':value'] = $filter_results['phenotypic_value']['value'];
+    }
+
     // -- Name.
     if ($filter_results['name'] != '') {
       $where[] = "(s.name ~* :name OR s.uniquename = :name)";
@@ -322,7 +369,7 @@ class GermplasmAccessionSearch extends ChadoCustomSearch {
 
     // Finally, add it to the query.
     if (!empty($joins)) {
-      $query .= implode("\n",$joins);
+      $query .= "\n" . implode("\n",$joins);
     }
     if (!empty($where)) {
       $query .= "\n" . ' WHERE ' . implode(' AND ',$where);
@@ -335,7 +382,8 @@ class GermplasmAccessionSearch extends ChadoCustomSearch {
     $limit = $this::$num_items_per_page + 1;
     $query .= "\n" . ' LIMIT ' . $limit . ' OFFSET ' . $offset;
 
-    // @debug dpm(strtr(str_replace(['{','}'], ['chado.', ''], $query), $args), 'query');
+    // @debug
+    dpm(strtr(str_replace(['{','}'], ['chado.', ''], $query), $args), 'query');
   }
 
   /**

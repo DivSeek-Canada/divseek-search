@@ -8,6 +8,7 @@
 require_once 'includes/GermplasmAccessionSearch.inc';
 require_once 'includes/TraitSearch.inc';
 require_once 'includes/GeneticMapSearch.inc';
+require_once 'includes/form_elements.inc';
 
 /**
  * Implement hook_chado_custom_search().
@@ -23,4 +24,12 @@ function divseek_search_chado_custom_search() {
   $searches['GeneticMapSearch'] = 'Genetic Maps';
 
   return $searches;
+}
+
+function divseek_search_theme() {
+  return array(
+    'divseek_search_inline_form_element' => array(
+      'render element' => 'element',
+    ),
+  );
 }

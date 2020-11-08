@@ -154,7 +154,20 @@ function phenotypic_value_process($element, &$form_state, $complete_form) {
 function phenotypic_value_validate($element, &$form_state) {
 
 	// All elements must be provided on submit.
+	if ($form_state['triggering_element']['#type'] == 'submit') {
 
+		$name = $element['#name'];
+		if (!empty($form_state['values'][$name]['trait'])) {
+			if (empty($form_state['values'][$name]['value'])) {
+				form_set_error("$name][value",
+					'The "value" is required to filter by phenotypic value.');
+			}
+			if (empty($form_state['values'][$name]['unit'])) {
+				form_set_error("$name][unit",
+					'The "unit" is required to filter by phenotypic value.');
+			}
+		}
+	}
 }
 
 /**

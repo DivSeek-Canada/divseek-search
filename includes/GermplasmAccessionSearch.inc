@@ -255,6 +255,16 @@ class GermplasmAccessionSearch extends ChadoCustomSearch {
     $form['name']['#prefix'] = '<div class="search-row">';;
     $form['name']['#suffix'] = '</div>';
 
+    // Add AJAX to genus since phenotypic value needs to be refreshed.
+    //-----------------------------------------------------------------
+		$form['genus']['#ajax'] = [
+			'wrapper' => 'phenotypic-value-field-wrapper',
+			'callback' => 'ajax_phenotype_value_field_refresh',
+			'element' => 'phenotypic_value',
+		];
+
+    // Ensure phenotypic value field uses the correct form element.
+    //--------------------------------------------------------------
     $form['phenotypic_value']['#type'] = 'phenotypic_value';
     $form['phenotypic_value']['#genus'] = $genus_default;
     $form['phenotypic_value']['#description'] = '';
@@ -350,7 +360,10 @@ class GermplasmAccessionSearch extends ChadoCustomSearch {
     }
 
     // -- Phenotypic Value.
-    if ($filter_results['phenotypic_value']['trait'] != '') {
+    if (is_array($filter_results['phenotypic_value'])
+      AND $filter_results['phenotypic_value']['trait'] != ''
+      AND $filter_results['phenotypic_value']['unit'] != '') {
+
       $where[] = '
       s.stock_id IN (
         SELECT stock_id FROM {phenotype}
@@ -382,8 +395,7 @@ class GermplasmAccessionSearch extends ChadoCustomSearch {
     $limit = $this::$num_items_per_page + 1;
     $query .= "\n" . ' LIMIT ' . $limit . ' OFFSET ' . $offset;
 
-    // @debug
-    dpm(strtr(str_replace(['{','}'], ['chado.', ''], $query), $args), 'query');
+    // @debug dpm(strtr(str_replace(['{','}'], ['chado.', ''], $query), $args), 'query');
   }
 
   /**

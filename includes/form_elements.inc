@@ -27,8 +27,10 @@ function divseek_search_element_info() {
  */
 function phenotypic_value_process($element, &$form_state, $complete_form) {
 
-	// @debug dpm($element['#default_value'], 'element default');
+	// @debug dpm($element, 'element');
 	$element['#tree'] = TRUE;
+	$element['#prefix'] = '<div id="phenotypic-value-field-wrapper"';
+	$element['#suffix'] = '</div>';
 
 	// Defaults.
 	if (!isset($element['#default_value'])) {
@@ -62,7 +64,7 @@ function phenotypic_value_process($element, &$form_state, $complete_form) {
 		$element['#disabled'] = TRUE;
 	}
 	$unit_disabled = TRUE;
-	if ($element['#default_value']['trait'] !== NULL) {
+	if (!empty($element['#default_value']['trait'])) {
 		$unit_disabled = FALSE;
 	}
 
@@ -88,6 +90,11 @@ function phenotypic_value_process($element, &$form_state, $complete_form) {
 		'#empty_option' => '- Trait -',
 		'#disabled' => $element['#disabled'],
 		'#default_value' => $element['#default_value']['trait'],
+		'#ajax' => [
+			'wrapper' => 'phenotypic-value-field-wrapper',
+			'callback' => 'ajax_phenotype_value_field_refresh',
+			'element' => $element['#name'],
+		],
 	];
 
 	$element['is'] = [
@@ -146,12 +153,14 @@ function phenotypic_value_process($element, &$form_state, $complete_form) {
  */
 function phenotypic_value_validate($element, &$form_state) {
 
+	// All elements must be provided on submit.
+
 }
 
 /**
  * Inline-form element wrappers.
  */
- function theme_divseek_search_inline_form_element($variables) {
+function theme_divseek_search_inline_form_element($variables) {
    $element = $variables['element'];
 
    // Add element #id for #type 'item'.
@@ -209,4 +218,12 @@ function phenotypic_value_validate($element, &$form_state) {
    }
    $output .= "</div>\n";
    return $output;
- }
+}
+
+/**
+ * AJAX: Refresh the phenotypic value form field.
+ */
+function ajax_phenotype_value_field_refresh($form, $form_state) {
+	$name = $form_state['triggering_element']['#ajax']['element'];
+	return $form[$name];
+}

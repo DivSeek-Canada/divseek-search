@@ -364,11 +364,42 @@ class GermplasmAccessionSearch extends ChadoCustomSearch {
       AND $filter_results['phenotypic_value']['trait'] != ''
       AND $filter_results['phenotypic_value']['unit'] != '') {
 
-      $where[] = '
-      s.stock_id IN (
-        SELECT stock_id FROM {phenotype}
-        WHERE attr_id = :trait AND unit_id = :unit
-        AND value '.$filter_results['phenotypic_value']['operator'].' :value)';
+      $op = $filter_results['phenotypic_value']['operator'];
+      switch ($filter_results['phenotypic_value']['scope']) {
+        case 'measurement':
+          $where[] = '
+            s.stock_id IN (
+              SELECT stock_id FROM {phenotype}
+              WHERE attr_id = :trait AND unit_id = :unit
+                AND value ' . $op . ' :value)';
+          break;
+        case 'siteyear':
+          $where[] = '
+            s.stock_id IN (
+              SELECT stock_id FROM {mview_phenotype_average}
+              WHERE trait_id = :trait AND unit_id = :unit AND scope = :scope
+                AND value ' . $op . ' :value)';
+          $args[':scope'] = 'siteyear';
+          break;
+        case 'experiment':
+        default:
+          $where[] = '
+            s.stock_id IN (
+              SELECT stock_id FROM {mview_phenotype_average}
+              WHERE trait_id = :trait AND unit_id = :unit AND scope = :scope
+                AND value ' . $op . ' :value)';
+          $args[':scope'] = 'experiment';
+          break;
+        case 'trait':
+          $where[] = '
+            s.stock_id IN (
+              SELECT stock_id FROM {mview_phenotype_average}
+              WHERE trait_id = :trait AND unit_id = :unit AND scope = :scope
+                AND value ' . $op . ' :value)';
+          $args[':scope'] = 'trait';
+          break;
+      }
+
       $args[':trait'] = $filter_results['phenotypic_value']['trait'];
       $args[':unit'] = $filter_results['phenotypic_value']['unit'];
       $args[':value'] = $filter_results['phenotypic_value']['value'];

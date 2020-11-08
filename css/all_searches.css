@@ -31,9 +31,10 @@
   flex-grow: 4;
   margin-left: 0;
 }
-.container-inline .form-item-phenotypic-value-units {
-  flex-grow: 2;
-  margin-right: 0;
+.container-inline .form-item-phenotypic-value-units,
+  .container-inline .form-item-phenotypic-value-scope {
+    flex-grow: 2;
+    margin-right: 0;
 }
 
 .form-item-phenotypic-value {

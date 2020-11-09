@@ -378,7 +378,7 @@ class GermplasmAccessionSearch extends ChadoCustomSearch {
             s.stock_id IN (
               SELECT stock_id FROM {mview_phenotype_average}
               WHERE trait_id = :trait AND unit_id = :unit AND scope = :scope
-                AND value ' . $op . ' :value)';
+                AND (mean_value ' . $op . ' :value OR qual_values' . $op . ' :value))';
           $args[':scope'] = 'siteyear';
           break;
         case 'experiment':
@@ -387,7 +387,7 @@ class GermplasmAccessionSearch extends ChadoCustomSearch {
             s.stock_id IN (
               SELECT stock_id FROM {mview_phenotype_average}
               WHERE trait_id = :trait AND unit_id = :unit AND scope = :scope
-                AND value ' . $op . ' :value)';
+                AND (mean_value ' . $op . ' :value OR qual_values' . $op . ' :value))';
           $args[':scope'] = 'experiment';
           break;
         case 'trait':
@@ -395,7 +395,7 @@ class GermplasmAccessionSearch extends ChadoCustomSearch {
             s.stock_id IN (
               SELECT stock_id FROM {mview_phenotype_average}
               WHERE trait_id = :trait AND unit_id = :unit AND scope = :scope
-                AND value ' . $op . ' :value)';
+                AND (mean_value ' . $op . ' :value OR qual_values' . $op . ' :value))';
           $args[':scope'] = 'trait';
           break;
       }

@@ -153,7 +153,7 @@ function phenotypic_value_process($element, &$form_state, $complete_form) {
 			'experiment' => 'Mean per Experiment',
 			'trait' => 'Mean per Trait',
 		],
-		'#default_value' => 'siteyear',
+		'#default_value' => $element['#default_value']['scope'],
 	];
 
 	return $element;

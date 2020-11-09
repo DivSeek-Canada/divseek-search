@@ -8,6 +8,7 @@
  *
  */
 function divseek_search_mview_phenotype_means() {
+
 	$schema = array(
 	  'description' => 'Caches phenotypic data for easier retrieval of means. Data replicates are combined.',
 	  'table' => 'mview_phenotype_average',
@@ -55,15 +56,26 @@ function divseek_search_mview_phenotype_means() {
 	      'length' => '255',
 	      'not null' => true,
 	    ),
-	    'value' => array(
-	      'type' => 'varchar',
-	      'length' => '255',
-	      'not null' => true,
-	    ),
+      'mean_value' => array (
+        'type' => 'float',
+      ),
+      'std_dev' => array (
+        'type' => 'float',
+      ),
+      'qual_values' => array (
+        'type' => 'text',
+      ),
 	  ),
 	  'indexes' => array(
 	  ),
 	);
+
+	$sysvar = ap_get_variablenames(
+    array('variablename' => 'varset'),
+    array('set' => 'terms')
+  );
+  $loc_typeid = variable_get($sysvar['ap_location']);
+  $yr_typeid = variable_get($sysvar['ap_year']);
 	$query = "    SELECT
       o.genus         AS organism_genus,
       p.attr_id       AS trait_id,
@@ -74,12 +86,15 @@ function divseek_search_mview_phenotype_means() {
       yr.value        AS year,
       p.stock_id      AS stock_id,
       'siteyear'      AS scope,
-      avg(cast(p.value as float)) AS value
+      avg(cast(p.value as real)) AS mean_value,
+      stddev(cast(p.value as real)) AS std_dev
     FROM {phenotype} p
       LEFT JOIN {stock} s ON s.stock_id=p.stock_id
       LEFT JOIN {organism} o ON o.organism_id=s.organism_id
-      LEFT JOIN {phenotypeprop} loc ON loc.phenotype_id=p.phenotype_id AND loc.type_id = 3036
-      LEFT JOIN {phenotypeprop} yr ON yr.phenotype_id=p.phenotype_id AND yr.type_id = 141
+      LEFT JOIN {phenotypeprop} loc ON loc.phenotype_id=p.phenotype_id AND loc.type_id = ".$loc_typeid."
+      LEFT JOIN {phenotypeprop} yr ON yr.phenotype_id=p.phenotype_id AND yr.type_id = ".$yr_typeid."
+    WHERE
+      p.unit_id IN (SELECT cvterm_id FROM {cvtermprop} WHERE value='quantitative')
     GROUP BY
       p.attr_id,
       p.project_id,
@@ -100,10 +115,13 @@ UNION
       NULL            AS year,
       p.stock_id      AS stock_id,
       'experiment'    AS scope,
-      avg(cast(p.value as float)) AS value
+      avg(cast(p.value as real)) AS mean_value,
+      stddev(cast(p.value as real)) AS std_dev
     FROM {phenotype} p
       LEFT JOIN {stock} s ON s.stock_id=p.stock_id
       LEFT JOIN {organism} o ON o.organism_id=s.organism_id
+    WHERE
+      p.unit_id IN (SELECT cvterm_id FROM {cvtermprop} WHERE value='quantitative')
     GROUP BY
       p.attr_id,
       p.project_id,
@@ -122,10 +140,13 @@ UNION
       NULL            AS year,
       p.stock_id      AS stock_id,
       'trait'         AS scope,
-      avg(cast(p.value as float)) AS value
+      avg(cast(p.value as real)) AS mean_value,
+      stddev(cast(p.value as real)) AS std_dev
     FROM {phenotype} p
       LEFT JOIN {stock} s ON s.stock_id=p.stock_id
       LEFT JOIN {organism} o ON o.organism_id=s.organism_id
+    WHERE
+      p.unit_id IN (SELECT cvterm_id FROM {cvtermprop} WHERE value='quantitative')
     GROUP BY
       p.attr_id,
       p.assay_id,

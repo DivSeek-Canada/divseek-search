@@ -72,10 +72,11 @@ function divseek_search_mview_phenotype_means() {
       p.unit_id       AS unit_id,
       loc.value       AS location,
       yr.value        AS year,
-      'siteyear'      AS scope,
       p.stock_id      AS stock_id,
-      avg(p.value) AS value
+      'siteyear'      AS scope,
+      avg(cast(p.value as float)) AS value
     FROM {phenotype} p
+      LEFT JOIN {stock} s ON s.stock_id=p.stock_id
       LEFT JOIN {organism} o ON o.organism_id=s.organism_id
       LEFT JOIN {phenotypeprop} loc ON loc.phenotype_id=p.phenotype_id AND loc.type_id = 3036
       LEFT JOIN {phenotypeprop} yr ON yr.phenotype_id=p.phenotype_id AND yr.type_id = 141
@@ -97,10 +98,11 @@ UNION
       p.unit_id       AS unit_id,
       NULL            AS location,
       NULL            AS year,
-      'experiment'    AS scope,
       p.stock_id      AS stock_id,
-      avg(p.value) AS value
+      'experiment'    AS scope,
+      avg(cast(p.value as float)) AS value
     FROM {phenotype} p
+      LEFT JOIN {stock} s ON s.stock_id=p.stock_id
       LEFT JOIN {organism} o ON o.organism_id=s.organism_id
     GROUP BY
       p.attr_id,
@@ -118,10 +120,11 @@ UNION
       p.unit_id       AS unit_id,
       NULL            AS location,
       NULL            AS year,
-      'trait'         AS scope,
       p.stock_id      AS stock_id,
-      avg(p.value) AS value
+      'trait'         AS scope,
+      avg(cast(p.value as float)) AS value
     FROM {phenotype} p
+      LEFT JOIN {stock} s ON s.stock_id=p.stock_id
       LEFT JOIN {organism} o ON o.organism_id=s.organism_id
     GROUP BY
       p.attr_id,

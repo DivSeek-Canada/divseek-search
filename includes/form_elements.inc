@@ -39,6 +39,7 @@ function phenotypic_value_process($element, &$form_state, $complete_form) {
 			'operator' => '>=',
 			'value' => NULL,
 			'unit' => NULL,
+      'scope' => 'siteyear',
 		];
 	}
 	else {
@@ -53,6 +54,9 @@ function phenotypic_value_process($element, &$form_state, $complete_form) {
 		}
 		if (!isset($element['#default_value']['unit'])) {
 			$element['#default_value']['unit'] = NULL;
+		}
+		if (!isset($element['#default_value']['scope'])) {
+			$element['#default_value']['scope'] = 'siteyear';
 		}
 	}
 

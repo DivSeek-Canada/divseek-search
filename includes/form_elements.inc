@@ -162,11 +162,13 @@ function phenotypic_value_process($element, &$form_state, $complete_form) {
     '#suffix' => '</div>'
 	];
 
+  $trait_id = ($element['#default_value']['trait']) ? (int) $element['#default_value']['trait'] : NULL;
   drupal_add_js("https://d3js.org/d3.v4.js", "external");
   drupal_add_js("https://d3js.org/d3-scale-chromatic.v1.min.js", "external");
-  if ($element['#default_value']['trait']) {
-    drupal_add_js(['divseeksearch' => ['dataurl' => url('data/divseeksearch/trait/heatmap/' . $element['#default_value']['trait'])]], 'setting');
-  }
+  drupal_add_js(['divseeksearch' => [
+      'dataurl' => url('data/divseeksearch/trait/heatmap'),
+      'trait_id' => $trait_id,
+    ]], 'setting');
   drupal_add_js(drupal_get_path("module","divseek_search"). '/js/phenotypicvalues-heatmap.js');
   $element['chart'] = [
     '#type' => 'markup',
@@ -275,33 +277,54 @@ function ajax_phenotype_value_field_refresh($form, $form_state) {
 function divseek_search_get_heatmap_data($trait_id) {
   $data = [];
 
-  // First determine the range.
-  $range = chado_query("SELECT min(mean_value) as min, max(mean_value) as max FROM {mview_phenotype_average} where trait_id=:id",
-    [":id" => $trait_id])->fetchObject();
+  // First check if quantitative or qualitative.
+  $quantitative = chado_query("SELECT true FROM {mview_phenotype_average}
+    WHERE trait_id=:trait_id AND qual_values IS NULL",
+    [':trait_id' => $trait_id])->fetchField();
 
-  $num_bins = 10;
-  $start = floor($range->min);
-  $max = ceil($range->max);
-  $step = ceil(($max - $start) / $num_bins);
-  $end = $start + ($step * $num_bins);
+  // If Quantitative, then determine the range.
+  if ($quantitative) {
+    $range = chado_query("SELECT min(mean_value) as min, max(mean_value) as max FROM {mview_phenotype_average} where trait_id=:id",
+      [":id" => $trait_id])->fetchObject();
 
-  $sql = "SELECT count(*) FROM {mview_phenotype_average}
-    WHERE trait_id=:id AND scope = 'trait'
-    AND mean_value BETWEEN :start AND :end";
-  for($i=0; $i<$num_bins; $i++) {
-    $i_start = ($start + ($i*$step));
-    $i_end = $i_start + $step - 1;
-    $num_germ = chado_query($sql, [
-        ':id' => $trait_id,
-        ':start' => $i_start,
-        ':end' => $i_end,
-      ])->fetchField();
+    $num_bins = 10;
+    $start = floor($range->min);
+    $max = ceil($range->max);
+    $step = ceil(($max - $start) / $num_bins);
+    $end = $start + ($step * $num_bins);
 
-    $data[] = [
-      'group' => $i_start . '-' . $i_end,
-      'variable' => $trait_id,
-      'value' => $num_germ,
-    ];
+    $sql = "SELECT count(*) FROM {mview_phenotype_average}
+      WHERE trait_id=:id AND scope = 'trait'
+      AND mean_value BETWEEN :start AND :end";
+    for($i=0; $i<$num_bins; $i++) {
+      $i_start = ($start + ($i*$step));
+      $i_end = $i_start + $step - 1;
+      $num_germ = chado_query($sql, [
+          ':id' => $trait_id,
+          ':start' => $i_start,
+          ':end' => $i_end,
+        ])->fetchField();
+
+      $data[] = [
+        'group' => $i_start . '-' . $i_end,
+        'variable' => $trait_id,
+        'value' => $num_germ,
+      ];
+    }
+  }
+  // Otherwise it's qualitative.
+  else {
+    $sql = "SELECT qual_values, count(*) as num FROM {mview_phenotype_average}
+      WHERE trait_id=:trait_id AND scope='trait'
+      GROUP BY qual_values ORDER BY qual_values";
+    $resource = chado_query($sql, [':trait_id' => $trait_id]);
+    while ($r = $resource->fetchObject()) {
+      $data[] = [
+        'group' => $r->qual_values,
+        'variable' => $trait_id,
+        'value' => $r->num,
+      ];
+    }
   }
 
   return drupal_json_output($data);

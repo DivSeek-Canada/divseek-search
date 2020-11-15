@@ -308,7 +308,7 @@ function divseek_search_get_heatmap_data($trait_id, $unit_id) {
     $diff = $range->max - $range->min;
     $start = $range->min;
     $end = $range->max;
-    $step = round(($diff / $num_bins), 1);
+    $step = round(($diff / $num_bins), 2);
 
     $sql = "SELECT count(*) FROM {mview_phenotype_average}
       WHERE trait_id=:trait_id AND unit_id=:unit_id AND scope = 'trait'

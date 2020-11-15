@@ -86,8 +86,8 @@ function divseek_search_mview_phenotype_means() {
       yr.value        AS year,
       p.stock_id      AS stock_id,
       'siteyear'      AS scope,
-      round(avg(cast(p.value as real))::numeric, 1) AS mean_value,
-      round(stddev(cast(p.value as real))::numeric, 1) AS std_dev,
+      round(avg(cast(p.value as real))::numeric, 2) AS mean_value,
+      round(stddev(cast(p.value as real))::numeric, 2) AS std_dev,
 			NULL as qual_values
     FROM {phenotype} p
       LEFT JOIN {stock} s ON s.stock_id=p.stock_id
@@ -116,8 +116,8 @@ UNION
       NULL            AS year,
       p.stock_id      AS stock_id,
       'experiment'    AS scope,
-      round(avg(cast(p.value as real))::numeric, 1) AS mean_value,
-      round(stddev(cast(p.value as real))::numeric, 1) AS std_dev,
+      round(avg(cast(p.value as real))::numeric, 2) AS mean_value,
+      round(stddev(cast(p.value as real))::numeric, 2) AS std_dev,
 			NULL as qual_values
     FROM {phenotype} p
       LEFT JOIN {stock} s ON s.stock_id=p.stock_id
@@ -142,8 +142,8 @@ UNION
       NULL            AS year,
       p.stock_id      AS stock_id,
       'trait'         AS scope,
-      round(avg(cast(p.value as real))::numeric, 1) AS mean_value,
-      round(stddev(cast(p.value as real))::numeric, 1) AS std_dev,
+      round(avg(cast(p.value as real))::numeric, 2) AS mean_value,
+      round(stddev(cast(p.value as real))::numeric, 2) AS std_dev,
 			NULL as qual_values
     FROM {phenotype} p
       LEFT JOIN {stock} s ON s.stock_id=p.stock_id

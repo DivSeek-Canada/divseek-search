@@ -303,7 +303,7 @@ function divseek_search_get_heatmap_data($trait_id) {
       AND mean_value BETWEEN :start AND :end";
     for($i=0; $i<$num_bins; $i++) {
       $i_start = ($start + ($i*$step));
-      $i_end = $i_start + $step - 1;
+      $i_end = $i_start + $step;
       $num_germ = chado_query($sql, [
           ':id' => $trait_id,
           ':start' => $i_start,

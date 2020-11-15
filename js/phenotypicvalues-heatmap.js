@@ -65,7 +65,7 @@
             // Build color scale
             var myColor = d3.scaleSequential()
               .interpolator(d3.interpolateBlues)
-              .domain([1,maxGerm])
+              .domain([0,maxGerm])
 
             // add the squares
             svg.selectAll()
@@ -90,8 +90,8 @@
                 .attr("transform", function(d) {
                   return "translate("+ x(d.group) +","+ y(d.variable) +")"})
                 .append('text')
-                  .attr('y', 28 )
-                  .attr('x', 30 )
+                  .attr('y', 28)
+                  .attr('x', 30)
                   .attr('text-anchor', 'middle')
                   .style("fill", '#000')
                   .text(function (d) { return d.value; });

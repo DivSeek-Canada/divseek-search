@@ -301,7 +301,7 @@ function divseek_search_get_heatmap_data($trait_id, $unit_id) {
     $range = chado_query("
       SELECT min(mean_value) as min, max(mean_value) as max
       FROM {mview_phenotype_average}
-      WHERE trait_id=:trait_id AND unit_id=:unit_id",
+      WHERE trait_id=:trait_id AND unit_id=:unit_id AND scope='trait'",
       [':trait_id' => $trait_id, ':unit_id' => $unit_id])->fetchObject();
 
     $num_bins = 10;
@@ -310,17 +310,19 @@ function divseek_search_get_heatmap_data($trait_id, $unit_id) {
     if ($diff <= $num_bins) {
       $decimals = 2;
     }
-    $start = round($range->min, $decimals, PHP_ROUND_HALF_DOWN);
-    $max = round($range->max, $decimals, PHP_ROUND_HALF_UP);
-    $step = round(($max - $start) / $num_bins, $decimals, PHP_ROUND_HALF_UP);
-    $end = $start + ($step * $num_bins);
+    $start = $range->min;
+    $max = $range->max;
+    $step = $diff / $num_bins;
+    $end = ceil($max);
 
     $sql = "SELECT count(*) FROM {mview_phenotype_average}
       WHERE trait_id=:trait_id AND unit_id=:unit_id AND scope = 'trait'
-      AND mean_value BETWEEN :start AND :end";
-    for($i=0; $i<$num_bins; $i++) {
-      $i_start = ($start + ($i*$step));
-      $i_end = $i_start + $step;
+      AND mean_value >= :start AND mean_value <= :end";
+    $i_end = floor($start * 100) / 100;
+    while ($i_end <= $end) {
+      $i_start = $i_end;
+      $i_end = round(($i_start + $step - 0.05), $decimals, PHP_ROUND_HALF_UP);
+
       $num_germ = chado_query($sql, [
           ':trait_id' => $trait_id,
           ':unit_id' => $unit_id,
@@ -329,7 +331,7 @@ function divseek_search_get_heatmap_data($trait_id, $unit_id) {
         ])->fetchField();
 
       $data[] = [
-        'group' => $i_start . '-' . $i_end,
+        'group' => number_format($i_start, $decimals) . '-' . number_format($i_end, $decimals),
         'variable' => $unit_id,
         'value' => $num_germ,
       ];
@@ -338,9 +340,10 @@ function divseek_search_get_heatmap_data($trait_id, $unit_id) {
   // Otherwise it's qualitative.
   else {
     $sql = "SELECT qual_values, count(*) as num FROM {mview_phenotype_average}
-      WHERE trait_id=:trait_id AND scope='trait'
+      WHERE trait_id=:trait_id AND unit_id=:unit_id AND scope='trait'
       GROUP BY qual_values ORDER BY qual_values";
-    $resource = chado_query($sql, [':trait_id' => $trait_id]);
+    $resource = chado_query($sql,
+      [':trait_id' => $trait_id, ':unit_id' => $unit_id]);
     while ($r = $resource->fetchObject()) {
       $data[] = [
         'group' => $r->qual_values,

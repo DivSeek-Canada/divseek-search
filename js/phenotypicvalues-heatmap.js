@@ -16,9 +16,12 @@
         Drupal.settings.divseeksearch.unit_ids.forEach(function(unit_id) {
 
           var unit_name = Drupal.settings.divseeksearch.units[unit_id];
+          var id = "#phenotypicvalues-heatmap-" + trait_id + '-' + unit_id;
+
+          d3.select(id + " svg").remove();
 
           // append the svg object to the body of the page
-          var svg = d3.select("#phenotypicvalues-heatmap-" + trait_id + '-' + unit_id)
+          var svg = d3.select(id)
           .append("svg")
             .attr("width", width + margin.left + margin.right)
             .attr("height", height + margin.top + margin.bottom)

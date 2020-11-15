@@ -315,8 +315,8 @@ function divseek_search_get_heatmap_data($trait_id, $unit_id) {
       AND mean_value BETWEEN :start AND :end";
     $i_end = $start - 0.5;
     while ($i_end <= $end) {
-      $i_start = $i_end + 0.1;
-      $i_end = $i_start + $step - 0.1;
+      $i_start = $i_end + 0.01;
+      $i_end = $i_start + $step - 0.01;
 
       $num_germ = chado_query($sql, [
           ':trait_id' => $trait_id,

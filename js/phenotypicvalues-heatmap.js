@@ -80,6 +80,21 @@
                 .style("stroke-width", 4)
                 .style("stroke", "none")
                 .style("opacity", 0.8)
+
+            // add labels for the squares
+            svg.selectAll()
+              .data(data, function(d) {return d.group+':'+d.variable;})
+              .enter()
+              .append("g")
+                .style("font-size", "10px")
+                .attr("transform", function(d) {
+                  return "translate("+ x(d.group) +","+ y(d.variable) +")"})
+                .append('text')
+                  .attr('y', 28 )
+                  .attr('x', 30 )
+                  .attr('text-anchor', 'middle')
+                  .style("fill", '#000')
+                  .text(function (d) { return d.value; });
           })
         })
       }

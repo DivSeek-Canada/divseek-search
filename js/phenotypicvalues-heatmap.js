@@ -6,8 +6,8 @@
       d3.select("#phenotypicvalues-heatmap svg").remove();
 
       // set the dimensions and margins of the graph
-      var margin = {top: 0, right: 150, bottom: 10, left: 30},
-        width = 800 - margin.left - margin.right,
+      var margin = {top: 0, right: 250, bottom: 10, left: 30},
+        width = 900 - margin.left - margin.right,
         height = 60 - margin.top - margin.bottom;
 
       var trait_id = Drupal.settings.divseeksearch.trait_id;

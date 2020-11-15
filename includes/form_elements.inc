@@ -288,9 +288,14 @@ function divseek_search_get_heatmap_data($trait_id) {
       [":id" => $trait_id])->fetchObject();
 
     $num_bins = 10;
-    $start = floor($range->min);
-    $max = ceil($range->max);
-    $step = ceil(($max - $start) / $num_bins);
+    $diff = $range->max - $range->min;
+    $decimals = 0;
+    if ($diff <= $num_bins) {
+      $decimals = 2;
+    }
+    $start = round($range->min, $decimals, PHP_ROUND_HALF_DOWN);
+    $max = round($range->max, $decimals, PHP_ROUND_HALF_UP);
+    $step = round(($max - $start) / $num_bins, $decimals, PHP_ROUND_HALF_UP);
     $end = $start + ($step * $num_bins);
 
     $sql = "SELECT count(*) FROM {mview_phenotype_average}

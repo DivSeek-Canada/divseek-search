@@ -304,24 +304,19 @@ function divseek_search_get_heatmap_data($trait_id, $unit_id) {
       WHERE trait_id=:trait_id AND unit_id=:unit_id AND scope='trait'",
       [':trait_id' => $trait_id, ':unit_id' => $unit_id])->fetchObject();
 
-    $num_bins = 10;
+    $num_bins = 8;
     $diff = $range->max - $range->min;
-    $decimals = 0;
-    if ($diff <= $num_bins) {
-      $decimals = 2;
-    }
     $start = $range->min;
-    $max = $range->max;
-    $step = $diff / $num_bins;
-    $end = ceil($max);
+    $end = $range->max;
+    $step = round(($diff / $num_bins), 1);
 
     $sql = "SELECT count(*) FROM {mview_phenotype_average}
       WHERE trait_id=:trait_id AND unit_id=:unit_id AND scope = 'trait'
-      AND mean_value >= :start AND mean_value <= :end";
-    $i_end = floor($start * 100) / 100;
+      AND mean_value BETWEEN :start AND :end";
+    $i_end = $start - 0.5;
     while ($i_end <= $end) {
-      $i_start = $i_end;
-      $i_end = round(($i_start + $step - 0.05), $decimals, PHP_ROUND_HALF_UP);
+      $i_start = $i_end + 0.1;
+      $i_end = $i_start + $step - 0.1;
 
       $num_germ = chado_query($sql, [
           ':trait_id' => $trait_id,
@@ -331,7 +326,7 @@ function divseek_search_get_heatmap_data($trait_id, $unit_id) {
         ])->fetchField();
 
       $data[] = [
-        'group' => number_format($i_start, $decimals) . '-' . number_format($i_end, $decimals),
+        'group' => $i_start . '-' . $i_end,
         'variable' => $unit_id,
         'value' => $num_germ,
       ];

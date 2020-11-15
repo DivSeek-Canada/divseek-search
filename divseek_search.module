@@ -33,10 +33,10 @@ function divseek_search_chado_custom_search() {
 function divseek_search_menu() {
   $items = [];
 
-  $items['data/divseeksearch/trait/heatmap/%'] =  array(
+  $items['data/divseeksearch/trait/heatmap/%/%'] =  array(
     'title' => t('Heatmap Trait data'),
     'page callback' => 'divseek_search_get_heatmap_data',
-    'page arguments' => [4],
+    'page arguments' => [4, 5],
     'access arguments' => array('access content'),
   );
 

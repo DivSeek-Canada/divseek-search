@@ -163,17 +163,31 @@ function phenotypic_value_process($element, &$form_state, $complete_form) {
 	];
 
   $trait_id = ($element['#default_value']['trait']) ? (int) $element['#default_value']['trait'] : NULL;
+  $units = chado_query("SELECT unit_id, unit_name FROM {mview_phenotype}
+    WHERE trait_id=:trait_id GROUP BY unit_id, unit_name",
+    [':trait_id' => $trait_id])->fetchAllKeyed(0,1);
   drupal_add_js("https://d3js.org/d3.v4.js", "external");
   drupal_add_js("https://d3js.org/d3-scale-chromatic.v1.min.js", "external");
   drupal_add_js(['divseeksearch' => [
       'dataurl' => url('data/divseeksearch/trait/heatmap'),
       'trait_id' => $trait_id,
+      'units' => (object) $units,
+      'unit_ids' => array_keys($units),
     ]], 'setting');
   drupal_add_js(drupal_get_path("module","divseek_search"). '/js/phenotypicvalues-heatmap.js');
   $element['chart'] = [
     '#type' => 'markup',
-    '#markup' => '<div id="phenotypicvalues-heatmap" title="Indicates the magnitude of germplasm with a given mean value per trait where larger number of germplasm are shown with a darker colour."></div>',
+    '#prefix' => '<div id="phenotypicvalues-heatmap">',
+    '#suffix' => '</div>',
   ];
+  foreach ($units as $unit_id => $unit_name) {
+    $id = 'phenotypicvalues-heatmap-' . $trait_id . '-' . $unit_id;
+    $tooltip = 'Unit: ' . $unit_name . "; Indicates the magnitude of germplasm with a given mean value per trait/unit where larger numbers of germplasm are shown with a darker colour.";
+    $element['chart'][$id] = [
+      '#type' => 'markup',
+      '#markup' => '<div id="'.$id.'"></div>',
+    ];
+  }
 
 	return $element;
 }
@@ -274,72 +288,65 @@ function ajax_phenotype_value_field_refresh($form, $form_state) {
 /**
  * Data-driven heatmap.
  */
-function divseek_search_get_heatmap_data($trait_id) {
+function divseek_search_get_heatmap_data($trait_id, $unit_id) {
   $data = [];
 
-  $units = chado_query("SELECT unit_id FROM {mview_phenotype_average}
-    WHERE trait_id=:trait_id GROUP BY unit_id",
-    [':trait_id' => $trait_id])->fetchCol();
+  // First check if quantitative or qualitative.
+  $quantitative = chado_query("SELECT true FROM {mview_phenotype_average}
+    WHERE trait_id=:trait_id AND unit_id=:unit_id AND qual_values IS NULL",
+    [':trait_id' => $trait_id, 'unit_id' => $unit_id])->fetchField();
 
-  foreach ($units as $unit_id) {
+  // If Quantitative, then determine the range.
+  if ($quantitative) {
+    $range = chado_query("
+      SELECT min(mean_value) as min, max(mean_value) as max
+      FROM {mview_phenotype_average}
+      WHERE trait_id=:trait_id AND unit_id=:unit_id",
+      [':trait_id' => $trait_id, ':unit_id' => $unit_id])->fetchObject();
 
-    // First check if quantitative or qualitative.
-    $quantitative = chado_query("SELECT true FROM {mview_phenotype_average}
-      WHERE trait_id=:trait_id AND unit_id=:unit_id AND qual_values IS NULL",
-      [':trait_id' => $trait_id, 'unit_id' => $unit_id])->fetchField();
-
-    // If Quantitative, then determine the range.
-    if ($quantitative) {
-      $range = chado_query("
-        SELECT min(mean_value) as min, max(mean_value) as max
-        FROM {mview_phenotype_average}
-        WHERE trait_id=:trait_id AND unit_id=:unit_id",
-        [':trait_id' => $trait_id, ':unit_id' => $unit_id])->fetchObject();
-
-      $num_bins = 10;
-      $diff = $range->max - $range->min;
-      $decimals = 0;
-      if ($diff <= $num_bins) {
-        $decimals = 2;
-      }
-      $start = round($range->min, $decimals, PHP_ROUND_HALF_DOWN);
-      $max = round($range->max, $decimals, PHP_ROUND_HALF_UP);
-      $step = round(($max - $start) / $num_bins, $decimals, PHP_ROUND_HALF_UP);
-      $end = $start + ($step * $num_bins);
-
-      $sql = "SELECT count(*) FROM {mview_phenotype_average}
-        WHERE trait_id=:trait_id AND unit_id=:unit_id AND scope = 'trait'
-        AND mean_value BETWEEN :start AND :end";
-      for($i=0; $i<$num_bins; $i++) {
-        $i_start = ($start + ($i*$step));
-        $i_end = $i_start + $step;
-        $num_germ = chado_query($sql, [
-            ':trait_id' => $trait_id,
-            ':unit_id' => $unit_id,
-            ':start' => $i_start,
-            ':end' => $i_end,
-          ])->fetchField();
-
-        $data[] = [
-          'group' => $i_start . '-' . $i_end,
-          'variable' => $unit_id,
-          'value' => $num_germ,
-        ];
-      }
+    $num_bins = 10;
+    $diff = $range->max - $range->min;
+    $decimals = 0;
+    if ($diff <= $num_bins) {
+      $decimals = 2;
     }
-    // Otherwise it's qualitative.
-    else {
-      $sql = "SELECT qual_values, count(*) as num FROM {mview_phenotype_average}
-        WHERE trait_id=:trait_id AND scope='trait'
-        GROUP BY qual_values ORDER BY qual_values";
-      $resource = chado_query($sql, [':trait_id' => $trait_id]);
-      while ($r = $resource->fetchObject()) {
-        $data[] = [
-          'group' => $r->qual_values,
-          'variable' => $unit_id,
-          'value' => $r->num,
-        ];
-      }
+    $start = round($range->min, $decimals, PHP_ROUND_HALF_DOWN);
+    $max = round($range->max, $decimals, PHP_ROUND_HALF_UP);
+    $step = round(($max - $start) / $num_bins, $decimals, PHP_ROUND_HALF_UP);
+    $end = $start + ($step * $num_bins);
+
+    $sql = "SELECT count(*) FROM {mview_phenotype_average}
+      WHERE trait_id=:trait_id AND unit_id=:unit_id AND scope = 'trait'
+      AND mean_value BETWEEN :start AND :end";
+    for($i=0; $i<$num_bins; $i++) {
+      $i_start = ($start + ($i*$step));
+      $i_end = $i_start + $step;
+      $num_germ = chado_query($sql, [
+          ':trait_id' => $trait_id,
+          ':unit_id' => $unit_id,
+          ':start' => $i_start,
+          ':end' => $i_end,
+        ])->fetchField();
+
+      $data[] = [
+        'group' => $i_start . '-' . $i_end,
+        'variable' => $unit_id,
+        'value' => $num_germ,
+      ];
+    }
+  }
+  // Otherwise it's qualitative.
+  else {
+    $sql = "SELECT qual_values, count(*) as num FROM {mview_phenotype_average}
+      WHERE trait_id=:trait_id AND scope='trait'
+      GROUP BY qual_values ORDER BY qual_values";
+    $resource = chado_query($sql, [':trait_id' => $trait_id]);
+    while ($r = $resource->fetchObject()) {
+      $data[] = [
+        'group' => $r->qual_values,
+        'variable' => $unit_id,
+        'value' => $r->num,
+      ];
     }
   }
 

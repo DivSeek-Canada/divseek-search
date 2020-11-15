@@ -99,6 +99,7 @@ function phenotypic_value_process($element, &$form_state, $complete_form) {
 			'callback' => 'ajax_phenotype_value_field_refresh',
 			'element' => $element['#name'],
 		],
+    '#prefix' => '<div class="phenotypic-statement">',
 	];
 
 	$element['is'] = [
@@ -158,7 +159,19 @@ function phenotypic_value_process($element, &$form_state, $complete_form) {
 			'trait' => 'Mean per Trait',
 		],
 		'#default_value' => $element['#default_value']['scope'],
+    '#suffix' => '</div>'
 	];
+
+  drupal_add_js("https://d3js.org/d3.v4.js", "external");
+  drupal_add_js("https://d3js.org/d3-scale-chromatic.v1.min.js", "external");
+  if ($element['#default_value']['trait']) {
+    drupal_add_js(['divseeksearch' => ['dataurl' => url('data/divseeksearch/trait/heatmap/' . $element['#default_value']['trait'])]], 'setting');
+  }
+  drupal_add_js(drupal_get_path("module","divseek_search"). '/js/phenotypicvalues-heatmap.js');
+  $element['chart'] = [
+    '#type' => 'markup',
+    '#markup' => '<div id="phenotypicvalues-heatmap" title="Indicates the magnitude of germplasm with a given mean value per trait where larger number of germplasm are shown with a darker colour."></div>',
+  ];
 
 	return $element;
 }
@@ -254,4 +267,42 @@ function theme_divseek_search_inline_form_element($variables) {
 function ajax_phenotype_value_field_refresh($form, $form_state) {
 	$name = $form_state['triggering_element']['#ajax']['element'];
 	return $form[$name];
+}
+
+/**
+ * Data-driven heatmap.
+ */
+function divseek_search_get_heatmap_data($trait_id) {
+  $data = [];
+
+  // First determine the range.
+  $range = chado_query("SELECT min(mean_value) as min, max(mean_value) as max FROM {mview_phenotype_average} where trait_id=:id",
+    [":id" => $trait_id])->fetchObject();
+
+  $num_bins = 10;
+  $start = floor($range->min);
+  $max = ceil($range->max);
+  $step = ceil(($max - $start) / $num_bins);
+  $end = $start + ($step * $num_bins);
+
+  $sql = "SELECT count(*) FROM {mview_phenotype_average}
+    WHERE trait_id=:id AND scope = 'trait'
+    AND mean_value BETWEEN :start AND :end";
+  for($i=0; $i<$num_bins; $i++) {
+    $i_start = ($start + ($i*$step));
+    $i_end = $i_start + $step - 1;
+    $num_germ = chado_query($sql, [
+        ':id' => $trait_id,
+        ':start' => $i_start,
+        ':end' => $i_end,
+      ])->fetchField();
+
+    $data[] = [
+      'group' => $i_start . '-' . $i_end,
+      'variable' => $trait_id,
+      'value' => $num_germ,
+    ];
+  }
+
+  return drupal_json_output($data);
 }

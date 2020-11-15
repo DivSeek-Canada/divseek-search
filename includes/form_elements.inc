@@ -313,7 +313,7 @@ function divseek_search_get_heatmap_data($trait_id, $unit_id) {
     $sql = "SELECT count(*) FROM {mview_phenotype_average}
       WHERE trait_id=:trait_id AND unit_id=:unit_id AND scope = 'trait'
       AND mean_value BETWEEN :start AND :end";
-    $i_end = $start - 0.5;
+    $i_end = $start - 0.01;
     while ($i_end <= $end) {
       $i_start = $i_end + 0.01;
       $i_end = $i_start + $step - 0.01;

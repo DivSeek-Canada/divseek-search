@@ -38,6 +38,7 @@ function divseek_search_menu() {
     'page callback' => 'divseek_search_get_heatmap_data',
     'page arguments' => [4, 5],
     'access arguments' => array('access content'),
+    'file' => 'includes/heatmap_callbacks.inc',
   );
 
   return $items;

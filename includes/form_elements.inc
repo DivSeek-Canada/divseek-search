@@ -425,4 +425,21 @@ function multi_phenotypic_value_process_remove_trait($form, &$form_state) {
  */
 function multi_phenotypic_value_validate($element, &$form_state) {
 
+  // All elements must be provided on submit.
+  if ($form_state['triggering_element']['#type'] == 'submit') {
+
+  	$name = $element['#name'];
+    foreach ($form_state['values'][$name] as $k => $trait) {
+  		if (!empty($trait['trait'])) {
+  			if (empty($trait['value'])) {
+  				form_set_error("$name][$k][value",
+  					'The "value" is required to filter by phenotypic value.');
+  			}
+  			if (empty($trait['unit'])) {
+  				form_set_error("$name][$k][unit",
+  					'The "unit" is required to filter by phenotypic value.');
+  			}
+  		}
+  	}
+  }
 }

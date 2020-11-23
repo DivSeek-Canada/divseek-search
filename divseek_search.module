@@ -8,6 +8,8 @@
 require_once 'includes/GermplasmAccessionSearch.inc';
 require_once 'includes/TraitSearch.inc';
 require_once 'includes/GeneticMapSearch.inc';
+require_once 'includes/form_elements.inc';
+require_once 'includes/mviews.inc';
 
 /**
  * Implement hook_chado_custom_search().
@@ -23,4 +25,36 @@ function divseek_search_chado_custom_search() {
   $searches['GeneticMapSearch'] = 'Genetic Maps';
 
   return $searches;
+}
+
+/**
+ * Implements hook_menu().
+ */
+function divseek_search_menu() {
+  $items = [];
+
+  $items['data/divseeksearch/trait/heatmap/%/%'] =  array(
+    'title' => t('Heatmap Trait data'),
+    'page callback' => 'divseek_search_get_heatmap_data',
+    'page arguments' => [4, 5],
+    'access arguments' => array('access content'),
+    'file' => 'includes/heatmap_callbacks.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function divseek_search_theme() {
+  return array(
+    'divseek_search_inline_form_element' => array(
+      'render element' => 'element',
+    ),
+  );
+}
+
+function divseek_search_flush_caches() {
+  divseek_search_mview_phenotype_means();
 }

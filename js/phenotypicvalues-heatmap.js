@@ -6,7 +6,7 @@
       d3.select("#phenotypicvalues-heatmap svg").remove();
 
       // set the dimensions and margins of the graph
-      var margin = {top: 0, right: 250, bottom: 10, left: 30},
+      var margin = {top: 20, right: 250, bottom: 10, left: 30},
         width = 900 - margin.left - margin.right,
         height = 60 - margin.top - margin.bottom;
 
@@ -38,24 +38,6 @@
             var myVars = d3.map(data, function(d){return d.variable;}).keys()
             var maxGerm = d3.max(data, function(d) { return d.value;} );
 
-            // Build X scales and axis:
-            var x = d3.scaleBand()
-              .range([ 0, width ])
-              .domain(myGroups)
-              .padding(0.01);
-            svg.append("g")
-              .style("font-size", 15)
-              .attr("transform", "translate(0," + height + ")")
-              .call(d3.axisBottom(x).tickSize(0))
-              .select(".domain").remove();
-            var xlabel = svg.append("g")
-              .attr("transform", "translate(" + (width + 10) + ",30)");
-            xlabel.append('text')
-              .style("font-size", 20)
-              .style("text-decoration", "underline")
-              .style("fill", '#4D4D4D')
-              .text(unit_name);
-
             // Build Y scales and axis:
             var y = d3.scaleBand()
               .range([ height, 0 ])
@@ -66,6 +48,45 @@
             var myColor = d3.scaleSequential()
               .interpolator(d3.interpolateBlues)
               .domain([0,maxGerm])
+
+            // Build X scales and axis:
+            var x = d3.scaleBand()
+              .range([ 0, width ])
+              .domain(myGroups)
+              .padding(0.01);
+            svg.append("g")
+              .style("font-size", 15)
+              .attr("transform", "translate(0," + height + ")")
+              .call(d3.axisBottom(x).tickSize(0))
+              .select(".domain").remove();
+
+            // Labels for the unit, germplasm axis and value axis.
+            var xlabel = svg.append("g")
+              .attr("transform", "translate(" + (width + 10) + "," + y.bandwidth()/2 + ")");
+            xlabel.append('text')
+              .style("font-size", "14px")
+              .style("text-decoration", "underline")
+              .style("font-weight", "bold")
+              .attr('y', 5)
+              .attr('alignment-baseline', 'center')
+              .style("fill", '#4D4D4D')
+              .text(unit_name);
+            var xlabel2 = svg.append("g")
+              .attr("transform", "translate(" + (width + 10) + ",0)");
+            xlabel2.append('text')
+              .style("font-size", "10px")
+              .attr('y', -5)
+              .attr('alignment-baseline', 'center')
+              .style("fill", '#4D4D4D')
+              .text("Number of Germplasm");
+            var xlabel3 = svg.append("g")
+              .attr("transform", "translate(" + (width + 10) + "," + (y.bandwidth() + margin.top) + ")");
+            xlabel3.append('text')
+              .style("font-size", "10px")
+              .attr('y', -8)
+              .attr('alignment-baseline', 'center')
+              .style("fill", '#4D4D4D')
+              .text("Mean Value per Trait");
 
             // add the squares
             svg.selectAll()
@@ -90,8 +111,8 @@
                 .attr("transform", function(d) {
                   return "translate("+ x(d.group) +","+ y(d.variable) +")"})
                 .append('text')
-                  .attr('y', 28)
-                  .attr('x', 30)
+                  .attr('y', -5)
+                  .attr('x', x.bandwidth()/2)
                   .attr('text-anchor', 'middle')
                   .style("fill", '#000')
                   .text(function (d) { return d.value; });

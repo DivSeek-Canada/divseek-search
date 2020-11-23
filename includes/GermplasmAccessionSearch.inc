@@ -258,17 +258,31 @@ class GermplasmAccessionSearch extends ChadoCustomSearch {
     // Add AJAX to genus since phenotypic value needs to be refreshed.
     //-----------------------------------------------------------------
 		$form['genus']['#ajax'] = [
-			'wrapper' => 'phenotypic-value-field-wrapper',
+			'wrapper' => 'multi-phenotypicvalue-field-wrapper',
 			'callback' => 'ajax_phenotype_value_field_refresh',
 			'element' => 'phenotypic_value',
 		];
 
     // Ensure phenotypic value field uses the correct form element.
     //--------------------------------------------------------------
-    $form['phenotypic_value']['#type'] = 'phenotypic_value';
+    $form['phenotypic_value']['#type'] = 'multi_phenotypic_value';
     $form['phenotypic_value']['#genus'] = $genus_default;
     $form['phenotypic_value']['#description'] = '';
+    if (isset($form['phenotypic_value']['#default_value'])) {
+      $defaultval = $form['phenotypic_value']['#default_value'];
+      if (isset($defaultval['add_trait'])) {
+        unset($defaultval['add_trait']);
+      }
+      if (isset($defaultval['remove_trait'])) {
+        unset($defaultval['remove_trait']);
+      }
+      $form['phenotypic_value']['#num_traits'] = sizeof($defaultval);
+      $form['phenotypic_value']['#default_value'] = $defaultval;
+    }
     // @debug dpm($form_state, 'Germplasm Search: form state');
+
+    dpm($form, 'form');
+    dpm($form_state, 'form state');
 
     return $form;
   }

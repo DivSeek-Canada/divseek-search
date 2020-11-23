@@ -184,15 +184,34 @@ function phenotypic_value_process($element, &$form_state, $complete_form) {
   $units = chado_query("SELECT unit_id, unit_name FROM {mview_phenotype}
     WHERE trait_id=:trait_id GROUP BY unit_id, unit_name",
     [':trait_id' => $trait_id])->fetchAllKeyed(0,1);
-  drupal_add_js("https://d3js.org/d3.v4.js", "external");
-  drupal_add_js("https://d3js.org/d3-scale-chromatic.v1.min.js", "external");
+  drupal_add_js("https://cdnjs.cloudflare.com/ajax/libs/d3/4.13.0/d3.min.js",
+    [
+      'type' => 'external',
+      'scope' => 'header',
+      'weight' => -20,
+    ]);
+  drupal_add_js("https://d3js.org/d3-scale-chromatic.v1.min.js",
+    [
+      'type' => 'external',
+      'scope' => 'header',
+      'weight' => -19,
+    ]);
   drupal_add_js(['divseeksearch' => [
       'dataurl' => url('data/divseeksearch/trait/heatmap'),
-      'trait_id' => $trait_id,
-      'units' => (object) $units,
-      'unit_ids' => array_keys($units),
+      'data' => [
+        [
+          'trait_id' => $trait_id,
+          'units' => (object) $units,
+          'unit_ids' => array_keys($units),
+        ],
+      ],
     ]], 'setting');
-  drupal_add_js(drupal_get_path("module","divseek_search"). '/js/phenotypicvalues-heatmap.js');
+  drupal_add_js(drupal_get_path("module","divseek_search"). '/js/phenotypicvalues-heatmap.js',
+    [
+      'type' => 'file',
+      'scope' => 'header',
+      'weight' => -18,
+    ]);
   $element['chart'] = [
     '#type' => 'markup',
     '#prefix' => '<div id="phenotypicvalues-heatmap">',
@@ -319,7 +338,12 @@ function multi_phenotypic_value_process($element, &$form_state, $complete_form) 
 
   // Defaults.
   if (empty($form_state['num_traits'])) {
-    $form_state['num_traits'] = 1;
+    if (isset($element['#num_traits'])) {
+      $form_state['num_traits'] = $element['#num_traits'];
+    }
+    else {
+      $form_state['num_traits'] = 1;
+    }
   }
   if (empty($element['#genus'])) {
     $element['#genus'] = NULL;
@@ -339,20 +363,17 @@ function multi_phenotypic_value_process($element, &$form_state, $complete_form) 
     }
   }
 
+
   // Build the number of name fieldsets indicated by $form_state['num_names']
   for ($i = 1; $i <= $form_state['num_traits']; $i++) {
     $element[$i] = [
-      '#type' => 'markup',
-      '#prefix' => '<div id="multi-phenotypicvalue-'.$i.'">',
-      '#suffix' => '</div>',
-    ];
-
-    $element[$i]['phenotypic_value'] = [
       '#type' => 'phenotypic_value',
       '#genus' => $element['#genus'],
       '#default_value' => $element['#default_value'][$i],
       '#ajax_element' => $element['#name'],
       '#ajax_wrapper' => 'multi-phenotypicvalue-field-wrapper',
+      '#prefix' => '<div id="multi-phenotypicvalue-'.$i.'">',
+      '#suffix' => '</div>',
     ];
   }
 

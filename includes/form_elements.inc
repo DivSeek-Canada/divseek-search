@@ -19,8 +19,18 @@ function divseek_search_element_info() {
 		'#theme_wrappers' => ['divseek_search_inline_form_element'],
 	];
 
+  // Phenotypic value filter.
+  $elements['multi_phenotypic_value'] = [
+    '#input' => TRUE,
+    '#process' => ['multi_phenotypic_value_process'],
+    '#element_validate' => ['multi_phenotypic_value_validate'],
+    '#theme_wrappers' => ['divseek_search_inline_form_element'],
+  ];
+
 	return $elements;
 }
+
+/////////////////// Single Phenotypic Value ////////////////////////////////////
 
 /**
  * 'phenotypic_value' Process Callback.
@@ -59,6 +69,14 @@ function phenotypic_value_process($element, &$form_state, $complete_form) {
 			$element['#default_value']['scope'] = 'siteyear';
 		}
 	}
+  $ajax_element = $element['#name'];
+  $ajax_wrapper = 'phenotypic-value-field-wrapper';
+  if (isset($element['#ajax_element'])) {
+    $ajax_element = $element['#ajax_element'];
+  }
+  if (isset($element['#ajax_wrapper'])) {
+    $ajax_wrapper = $element['#ajax_wrapper'];
+  }
 
 	// Determine what should be disabled.
 	if (!isset($element['#disabled'])) {
@@ -95,9 +113,9 @@ function phenotypic_value_process($element, &$form_state, $complete_form) {
 		'#disabled' => $element['#disabled'],
 		'#default_value' => $element['#default_value']['trait'],
 		'#ajax' => [
-			'wrapper' => 'phenotypic-value-field-wrapper',
+			'wrapper' => $ajax_wrapper,
 			'callback' => 'ajax_phenotype_value_field_refresh',
-			'element' => $element['#name'],
+			'element' => $ajax_element
 		],
     '#prefix' => '<div class="phenotypic-statement">',
 	];
@@ -281,6 +299,121 @@ function theme_divseek_search_inline_form_element($variables) {
  * AJAX: Refresh the phenotypic value form field.
  */
 function ajax_phenotype_value_field_refresh($form, $form_state) {
-	$name = $form_state['triggering_element']['#ajax']['element'];
-	return $form[$name];
+  $name = $form_state['triggering_element']['#ajax']['element'];
+  return $form[$name];
+}
+
+/////////////////// Multi-Phenotypic Value ////////////////////////////////////
+
+/**
+ * 'multi_phenotypic_value' Process Callback.
+ */
+function multi_phenotypic_value_process($element, &$form_state, $complete_form) {
+
+
+  // We will have many fields with the same name, so we need to be able to
+  // access the form hierarchically.
+  $element['#tree'] = TRUE;
+  $element['#prefix'] = '<div id="multi-phenotypicvalue-field-wrapper">';
+  $element['#suffix'] = '</div>';
+
+  // Defaults.
+  if (empty($form_state['num_traits'])) {
+    $form_state['num_traits'] = 1;
+  }
+  if (empty($element['#genus'])) {
+    $element['#genus'] = NULL;
+  }
+  if (empty($element['#default_value'])) {
+    $element['#default_value'] = [];
+  }
+  for ($i = 1; $i <= $form_state['num_traits']; $i++) {
+    if (!isset($element['#default_value'][$i])) {
+      $element['#default_value'][$i] = [
+        'trait' => NULL,
+  			'operator' => '>=',
+  			'value' => NULL,
+  			'unit' => NULL,
+        'scope' => 'siteyear',
+      ];
+    }
+  }
+
+  // Build the number of name fieldsets indicated by $form_state['num_names']
+  for ($i = 1; $i <= $form_state['num_traits']; $i++) {
+    $element[$i] = [
+      '#type' => 'markup',
+      '#prefix' => '<div id="multi-phenotypicvalue-'.$i.'">',
+      '#suffix' => '</div>',
+    ];
+
+    $element[$i]['phenotypic_value'] = [
+      '#type' => 'phenotypic_value',
+      '#genus' => $element['#genus'],
+      '#default_value' => $element['#default_value'][$i],
+      '#ajax_element' => $element['#name'],
+      '#ajax_wrapper' => 'multi-phenotypicvalue-field-wrapper',
+    ];
+  }
+
+  if ($element['#genus'] !== NULL) {
+    // Adds "Add another name" button.
+    $element['add_trait'] = array(
+      '#type' => 'submit',
+      '#value' => t('Add Another Trait'),
+      '#submit' => array('multi_phenotypic_value_process_add_trait'),
+    );
+
+    // If we have more than one name, this button allows removal of the
+    // last name.
+    if ($form_state['num_traits'] > 1) {
+      $element['remove_trait'] = array(
+        '#type' => 'submit',
+        '#value' => t('Remove Last Trait'),
+        '#submit' => array('multi_phenotypic_value_process_remove_trait'),
+        // Since we are removing a name, don't validate until later.
+        '#limit_validation_errors' => array(),
+      );
+    }
+  }
+
+  return $element;
+}
+
+/**
+ * Submit handler: "Add Another Trait" in multi_phenotypic_value_process().
+ *
+ * $form_state['num_traits'] tells the form builder function how many trait
+ * fieldsets to build, so here we increment it.
+ *
+ * All elements of $form_state are persisted, so there's no need to use a
+ * particular key, like the old $form_state['storage']. We can just use
+ * $form_state['num_traits'].
+ */
+function multi_phenotypic_value_process_add_trait($form, &$form_state) {
+
+  $form_state['num_traits']++;
+
+  // Setting $form_state['rebuild'] = TRUE causes the form to be rebuilt again.
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
+ * Submit handler: "Remove Last Trait" in multi_phenotypic_value_process().
+ */
+function multi_phenotypic_value_process_remove_trait($form, &$form_state) {
+  if ($form_state['num_traits'] > 1) {
+    $form_state['num_traits']--;
+  }
+
+  // Setting $form_state['rebuild'] = TRUE causes the form to be rebuilt again.
+  $form_state['rebuild'] = TRUE;
+}
+
+
+/**
+ * 'multi_phenotypic_value' Validate Callback.
+ */
+function multi_phenotypic_value_validate($element, &$form_state) {
+
 }

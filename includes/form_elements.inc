@@ -384,18 +384,6 @@ function multi_phenotypic_value_process($element, &$form_state, $complete_form) 
       '#value' => t('Add Another Trait'),
       '#submit' => array('multi_phenotypic_value_process_add_trait'),
     );
-
-    // If we have more than one name, this button allows removal of the
-    // last name.
-    if ($form_state['num_traits'] > 1) {
-      $element['remove_trait'] = array(
-        '#type' => 'submit',
-        '#value' => t('Remove Last Trait'),
-        '#submit' => array('multi_phenotypic_value_process_remove_trait'),
-        // Since we are removing a name, don't validate until later.
-        '#limit_validation_errors' => array(),
-      );
-    }
   }
 
   return $element;

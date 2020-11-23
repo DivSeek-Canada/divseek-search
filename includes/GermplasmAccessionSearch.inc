@@ -281,9 +281,6 @@ class GermplasmAccessionSearch extends ChadoCustomSearch {
     }
     // @debug dpm($form_state, 'Germplasm Search: form state');
 
-    dpm($form, 'form');
-    dpm($form_state, 'form state');
-
     return $form;
   }
 
@@ -374,49 +371,62 @@ class GermplasmAccessionSearch extends ChadoCustomSearch {
     }
 
     // -- Phenotypic Value.
-    if (is_array($filter_results['phenotypic_value'])
-      AND $filter_results['phenotypic_value']['trait'] != ''
-      AND $filter_results['phenotypic_value']['unit'] != '') {
+    if (is_array($filter_results['phenotypic_value'])) {
+      unset($filter_results['phenotypic_value']['add_trait']);
+      unset($filter_results['phenotypic_value']['remove_trait']);
 
-      $op = $filter_results['phenotypic_value']['operator'];
-      switch ($filter_results['phenotypic_value']['scope']) {
-        case 'measurement':
-          $where[] = '
-            s.stock_id IN (
-              SELECT stock_id FROM {phenotype}
-              WHERE attr_id = :trait AND unit_id = :unit
-                AND value ' . $op . ' :value)';
-          break;
-        case 'siteyear':
-          $where[] = '
-            s.stock_id IN (
-              SELECT stock_id FROM {mview_phenotype_average}
-              WHERE trait_id = :trait AND unit_id = :unit AND scope = :scope
-                AND (mean_value ' . $op . ' :value OR qual_values' . $op . ' :value))';
-          $args[':scope'] = 'siteyear';
-          break;
-        case 'experiment':
-        default:
-          $where[] = '
-            s.stock_id IN (
-              SELECT stock_id FROM {mview_phenotype_average}
-              WHERE trait_id = :trait AND unit_id = :unit AND scope = :scope
-                AND (mean_value ' . $op . ' :value OR qual_values' . $op . ' :value))';
-          $args[':scope'] = 'experiment';
-          break;
-        case 'trait':
-          $where[] = '
-            s.stock_id IN (
-              SELECT stock_id FROM {mview_phenotype_average}
-              WHERE trait_id = :trait AND unit_id = :unit AND scope = :scope
-                AND (mean_value ' . $op . ' :value OR qual_values' . $op . ' :value))';
-          $args[':scope'] = 'trait';
-          break;
+      foreach($filter_results['phenotypic_value'] as $k => $singletrait) {
+
+        // Check if this trait is empty.
+        if (!is_array($singletrait)) {
+          continue;
+        }
+        if ($singletrait['trait'] == '') {
+          continue;
+        }
+        if ($singletrait['unit'] == '') {
+          continue;
+        }
+
+        $op = $singletrait['operator'];
+        $plhd_trait = ':' . $k . 'trait';
+        $plhd_unit = ':' . $k . 'unit';
+        $plhd_value = ':' . $k . 'value';
+        $plhd_scope = ':' . $k . 'scope';
+        switch ($singletrait['scope']) {
+          case 'measurement':
+            $where[] = "
+              s.stock_id IN (
+                SELECT stock_id FROM {phenotype}
+                WHERE attr_id = $plhd_trait AND unit_id = $plhd_unit
+                  AND value $op $plhd_value)";
+            break;
+          case 'siteyear':
+          case 'experiment':
+          case 'trait':
+            $where[] = "
+              s.stock_id IN (
+                SELECT stock_id FROM {mview_phenotype_average}
+                WHERE trait_id = $plhd_trait AND unit_id = $plhd_unit
+                  AND scope = $plhd_scope AND
+                  (mean_value $op $plhd_value OR qual_values $op $plhd_value))";
+            $args[$plhd_scope] = $singletrait['scope'];
+            break;
+          default:
+            $where[] = "
+              s.stock_id IN (
+                SELECT stock_id FROM {mview_phenotype_average}
+                WHERE trait_id = $plhd_trait AND unit_id = $plhd_unit
+                  AND scope = $plhd_scope AND
+                  (mean_value $op $plhd_value OR qual_values $op $plhd_value))";
+            $args[$plhd_scope] = 'trait';
+            break;
+        }
+
+        $args[$plhd_trait] = $singletrait['trait'];
+        $args[$plhd_unit] = $singletrait['unit'];
+        $args[$plhd_value] = $singletrait['value'];
       }
-
-      $args[':trait'] = $filter_results['phenotypic_value']['trait'];
-      $args[':unit'] = $filter_results['phenotypic_value']['unit'];
-      $args[':value'] = $filter_results['phenotypic_value']['value'];
     }
 
     // -- Name.

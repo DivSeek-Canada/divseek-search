@@ -185,7 +185,7 @@ function phenotypic_value_process($element, &$form_state, $complete_form) {
     $tooltip = 'Unit: ' . $unit_name . "; Indicates the magnitude of germplasm with a given mean value per trait/unit where larger numbers of germplasm are shown with a darker colour.";
     $element['chart'][$id] = [
       '#type' => 'markup',
-      '#markup' => '<div id="'.$id.'"></div>',
+      '#markup' => '<div id="'.$id.'" class="phenotypicvalues-heatmap-item"></div>',
     ];
   }
 

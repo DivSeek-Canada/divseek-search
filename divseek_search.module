@@ -8,6 +8,7 @@
 require_once 'includes/GermplasmAccessionSearch.inc';
 require_once 'includes/TraitSearch.inc';
 require_once 'includes/GeneticMapSearch.inc';
+require_once 'includes/TraitQtlMarkerSearch.inc';
 require_once 'includes/form_elements.inc';
 require_once 'includes/mviews.inc';
 
@@ -23,6 +24,7 @@ function divseek_search_chado_custom_search() {
   $searches['GermplasmAccessionSearch'] = 'Germplasm Accessions';
   $searches['TraitSearch'] = 'Phenotypic Traits';
   $searches['GeneticMapSearch'] = 'Genetic Maps';
+  $searches['TraitQtlMarkerSearch'] = 'Trait QTL Marker Discovery Tool';
 
   return $searches;
 }

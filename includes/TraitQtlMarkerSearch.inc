@@ -109,7 +109,7 @@ class TraitQtlMarkerSearch extends ChadoCustomSearch {
       ],
       'germplasm' => [
         'title' => 'Germplasm',
-        'description' => 'The germplasm you are interested in.',
+        'help' => 'The germplasm you are interested in.',
       ],
     ],
   ];

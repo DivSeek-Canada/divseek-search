@@ -64,7 +64,10 @@ class TraitQtlMarkerSearch extends ChadoCustomSearch {
    * NOTE: paths supplied should be relative to $module.
    */
   public static $attached = [
-    'css' => [],
+    'css' => [
+      'css/all_searches.css',
+      'css/trait-qtl-marker.css',
+    ],
     'js' => [],
   ];
 
@@ -107,10 +110,12 @@ class TraitQtlMarkerSearch extends ChadoCustomSearch {
         'title' => 'QTL',
         'help' => 'The QTL to look for markers within.',
       ],
+      /*
       'germplasm' => [
         'title' => 'Germplasm',
         'help' => 'The germplasm you are interested in.',
       ],
+      */
     ],
   ];
 
@@ -145,27 +150,59 @@ class TraitQtlMarkerSearch extends ChadoCustomSearch {
     $form['s1'] = [
       '#type' => 'fieldset',
       '#title' => 'Step 1: Trait',
+      '#prefix' => '<div id="tqtlm-s1trait">',
+      '#suffix' => '</div>',
     ];
     $form['s1']['genus'] = $form['genus'];
+    $form['s1']['genus']['#weight'] = -10;
+    $form['s1']['genus']['#prefix'] = '<div id="tqtlm-s1trait-flex">';
     $form['s1']['trait'] = $form['trait'];
+    $form['s1']['trait']['#weight'] = -9;
+    $form['s1']['trait']['#suffix'] = '</div>';
     unset($form['genus'], $form['trait']);
 
     // -- QTL.
     $form['s2'] = [
       '#type' => 'fieldset',
       '#title' => 'Step 2: Quantitative Trait Loci',
+      '#prefix' => '<div id="tqtlm-s2qtl">',
+      '#suffix' => '</div>',
     ];
     $form['s2']['genetic_maps'] = $form['genetic_maps'];
+    $form['s2']['genetic_maps']['#weight'] = -10;
+    $form['s2']['genetic_maps']['#prefix'] = '<div id="tqtlm-s2qtl-flex">';
     $form['s2']['qtl'] = $form['qtl'];
+    $form['s2']['qtl']['#weight'] = -9;
+    $form['s2']['qtl']['#suffix'] = '</div>';
     unset($form['genetic_maps'], $form['qtl']);
 
     // -- Germplasm.
+    /*
     $form['s3'] = [
       '#type' => 'fieldset',
       '#title' => 'Step 3: Germplasm (Optional)',
     ];
     $form['s3']['germplasm'] = $form['germplasm'];
     unset($form['germplasm']);
+    */
+
+    // AJAX.
+    // -- Select genus should refresh trait fieldset.
+    $form['s1']['genus']['#ajax'] = [
+      'callback' => 'ajax_tqtlm_refreshtrait_callback',
+      'wrapper' => 'tqtlm-s1trait',
+      'method' => 'replace',
+      'effect' => 'fade',
+    ];
+
+    // -- Select trait should refresh genetic map & QTL fieldset.
+    $form['s1']['trait']['#ajax'] = [
+      'callback' => 'ajax_tqtlm_refreshqtl_callback',
+      'wrapper' => 'tqtlm-s2qtl',
+      'method' => 'replace',
+      'effect' => 'fade',
+    ];
+
 
     // Make into Drop-downs.
     // -- Genus.
@@ -283,4 +320,18 @@ class TraitQtlMarkerSearch extends ChadoCustomSearch {
 
     return $values;
   }
+}
+
+/**
+ * AJAX Callback: refresh trait fieldset after genus is selected.
+ */
+function ajax_tqtlm_refreshtrait_callback($form, $form_state) {
+  return $form['s1'];
+}
+
+/**
+ * AJAX Callback: refresh qtl fieldset after trait is selected.
+ */
+function ajax_tqtlm_refreshqtl_callback($form, $form_state) {
+  return $form['s2'];
 }

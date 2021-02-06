@@ -77,7 +77,7 @@ class TraitQtlMarkerSearch extends ChadoCustomSearch {
   public static $info = [
     // Lists the columns in your results table.
     'fields' => [
-      'name' => [
+      'marker' => [
         'title' => 'Marker Name',
         'entity_link' => [
           'chado_table' => 'feature',
@@ -216,13 +216,13 @@ class TraitQtlMarkerSearch extends ChadoCustomSearch {
     $options = [];
     if (!empty($values['genus'])) {
       $options = chado_query(
-        "SELECT name FROM {cvterm}
+        "SELECT cvterm_id, name FROM {cvterm}
          WHERE cvterm_id IN (
            SELECT trait_id
            FROM {mview_phenotype_average}
            WHERE organism_genus=:genus)
          ORDER BY name ASC",
-         [':genus' => $values['genus']])->fetchAllKeyed(0,0);
+         [':genus' => $values['genus']])->fetchAllKeyed(0,1);
     }
     $form['s1']['trait']['#type'] = 'select';
     $form['s1']['trait']['#options'] = $options;
@@ -251,6 +251,53 @@ class TraitQtlMarkerSearch extends ChadoCustomSearch {
    */
   public function getQuery(&$query, &$args, $offset) {
 
+    // Retrieve the filter results already set.
+    $filter_results = $this->values;
+    // @debug dpm($filter_results, 'filter_results');
+
+    $type_ids = $this->getTypeIDS();
+
+    if ($filter_results['trait']) {
+      $query = 'SELECT
+          trait.name as trait,
+          qtlink.feature_id,
+          qtl.uniquename as qtl,
+          lg.name as lg,
+          qtlstart.value as qtl_start,
+          qtlend.value as qtl_end,
+          locuspos.mappos as locus_position,
+          locus.name as locus,
+          marker.name as marker
+        FROM {cvterm} trait
+        LEFT JOIN {feature_cvterm} qtlink ON qtlink.cvterm_id = trait.cvterm_id
+        LEFT JOIN {feature} qtl ON qtl.feature_id = qtlink.feature_id
+        LEFT JOIN {featurepos} peak ON qtl.feature_id = peak.feature_id
+        LEFT JOIN {feature} lg ON peak.map_feature_id = lg.feature_id
+        LEFT JOIN {featureposprop} qtlstart
+          ON qtlstart.featurepos_id = peak.featurepos_id
+          AND qtlstart.type_id = :start_type
+        LEFT JOIN {featureposprop} qtlend
+          ON qtlend.featurepos_id = peak.featurepos_id
+          AND qtlend.type_id = :end_type
+        LEFT JOIN {featurepos} locuspos
+          ON locuspos.featuremap_id = peak.featuremap_id
+          AND locuspos.map_feature_id = peak.map_feature_id
+        LEFT JOIN {feature} locus ON locus.feature_id = locuspos.feature_id
+        LEFT JOIN {feature_relationship} tomarker
+          ON tomarker.subject_id = locus.feature_id
+          AND tomarker.type_id = :reltype
+        LEFT JOIN {feature} marker ON marker.feature_id = tomarker.object_id
+        WHERE trait.cvterm_id = :trait_id
+          AND locus.type_id = :locus_type
+          AND locuspos.mappos BETWEEN cast(qtlstart.value as double precision)
+            AND cast(qtlend.value as double precision)
+        ORDER BY lg.name ASC, peak.mappos ASC, locuspos.mappos ASC';
+      $args[':trait_id'] = $filter_results['trait'];
+      $args[':start_type'] = $type_ids['start'];
+      $args[':end_type'] = $type_ids['end'];
+      $args[':locus_type'] = $type_ids['locus'];
+      $args[':reltype'] = $type_ids['instance_of'];
+    }
     // @debug dpm(strtr(str_replace(['{','}'], ['chado.', ''], $query), $args), 'query');
   }
 
@@ -268,6 +315,7 @@ class TraitQtlMarkerSearch extends ChadoCustomSearch {
   public function formatResults(&$form, $results) {
     parent::formatResults($form, $results);
 
+    // @debug dpm($results, 'results');
     if (isset($form['results'])) {
 
     }
@@ -279,7 +327,13 @@ class TraitQtlMarkerSearch extends ChadoCustomSearch {
   private function getTypeIDS() {
     $ids = [];
     $term_identifiers = [
-      //'pop_type' => ['id' => 'MAIN:population_type'],
+      'start' => ['id' => 'MAIN:start'],
+      'end' => ['id' => 'MAIN:end'],
+      'locus' => ['id' => 'MAIN:marker_locus'],
+      //'lod' => ['id' => 'MAIN:lod'],
+      //'addt_effect' => ['id' => 'MAIN:additive_effect'],
+      //'parent' => ['id' => 'MAIN:direction'],
+      'instance_of' => ['id' => 'OBO_REL:instance_of'],
     ];
     foreach ($term_identifiers as $name => $identifiers) {
       $term = chado_get_cvterm($identifiers);

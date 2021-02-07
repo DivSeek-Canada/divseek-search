@@ -48,7 +48,7 @@ class TraitQtlMarkerSearch extends ChadoCustomSearch {
    * NOTE: Your query has to handle paging.
    */
   public static $pager = TRUE;
-  public static $num_items_per_page = 50;
+  public static $num_items_per_page = 20;
 
   /**
    * This defined the hook_menu definition for this search. At a minimum the
@@ -79,10 +79,10 @@ class TraitQtlMarkerSearch extends ChadoCustomSearch {
     'fields' => [
       'marker' => [
         'title' => 'Marker Name',
-        'entity_link' => [
-          'chado_table' => 'feature',
-          'id_column' => 'feature_id'
-        ],
+        //'entity_link' => [
+        //  'chado_table' => 'feature',
+        //  'id_column' => 'feature_id'
+        //],
       ],
       'lg' => [
         'title' => 'Linkage Group',
@@ -258,45 +258,51 @@ class TraitQtlMarkerSearch extends ChadoCustomSearch {
     $type_ids = $this->getTypeIDS();
 
     if ($filter_results['trait']) {
-      $query = 'SELECT
-          trait.name as trait,
-          qtlink.feature_id,
-          qtl.uniquename as qtl,
-          lg.name as lg,
-          qtlstart.value as qtl_start,
-          qtlend.value as qtl_end,
-          locuspos.mappos as locus_position,
-          locus.name as locus,
-          marker.name as marker
-        FROM {cvterm} trait
-        LEFT JOIN {feature_cvterm} qtlink ON qtlink.cvterm_id = trait.cvterm_id
-        LEFT JOIN {feature} qtl ON qtl.feature_id = qtlink.feature_id
-        LEFT JOIN {featurepos} peak ON qtl.feature_id = peak.feature_id
-        LEFT JOIN {feature} lg ON peak.map_feature_id = lg.feature_id
-        LEFT JOIN {featureposprop} qtlstart
-          ON qtlstart.featurepos_id = peak.featurepos_id
-          AND qtlstart.type_id = :start_type
-        LEFT JOIN {featureposprop} qtlend
-          ON qtlend.featurepos_id = peak.featurepos_id
-          AND qtlend.type_id = :end_type
-        LEFT JOIN {featurepos} locuspos
-          ON locuspos.featuremap_id = peak.featuremap_id
-          AND locuspos.map_feature_id = peak.map_feature_id
-        LEFT JOIN {feature} locus ON locus.feature_id = locuspos.feature_id
-        LEFT JOIN {feature_relationship} tomarker
-          ON tomarker.subject_id = locus.feature_id
-          AND tomarker.type_id = :reltype
-        LEFT JOIN {feature} marker ON marker.feature_id = tomarker.object_id
-        WHERE trait.cvterm_id = :trait_id
-          AND locus.type_id = :locus_type
-          AND locuspos.mappos BETWEEN cast(qtlstart.value as double precision)
-            AND cast(qtlend.value as double precision)
-        ORDER BY lg.name ASC, peak.mappos ASC, locuspos.mappos ASC';
+      $query = "SELECT
+        marker.genetic_marker_name as marker,
+        qtl.linkage_group as lg,
+        min(qtlstart.value) as min_qtl_start,
+        json_agg(json_build_object(
+         'marker_pos', marker.marker_pos,
+         'map_name', qtl.map_name,
+         'qtl_name', qtl.marker_locus_name,
+         'qtl_peak', qtl.marker_pos,
+         'qtl_start', qtlstart.value,
+         'qtl_end', qtlend.value
+        )) as qtl
+      FROM {tripal_map_qtl_and_mtl_mview} qtl
+      LEFT JOIN {feature_cvterm} tlink
+        ON tlink.feature_id = cast(qtl.feature_id as bigint)
+      LEFT JOIN {cvterm} trait
+        ON tlink.cvterm_id = trait.cvterm_id
+      LEFT JOIN {featureposprop} qtlstart
+        ON qtlstart.featurepos_id = cast(qtl.featurepos_id as bigint)
+        AND qtlstart.type_id = :start_type
+      LEFT JOIN {featureposprop} qtlend
+        ON qtlend.featurepos_id = cast(qtl.featurepos_id as bigint)
+        AND qtlend.type_id = :end_type
+      LEFT JOIN {tripal_map_genetic_markers_mview} marker
+        ON marker.map_id = qtl.map_id
+        AND marker.linkage_group_id = qtl.linkage_group_id
+      WHERE
+        trait.cvterm_id = :trait_id
+        AND qtl.marker_pos_type = 'qtl_peak'
+        AND cast(marker.marker_pos as double precision)
+          BETWEEN cast(qtlstart.value as double precision)
+          AND cast(qtlend.value as double precision)";
       $args[':trait_id'] = $filter_results['trait'];
       $args[':start_type'] = $type_ids['start'];
       $args[':end_type'] = $type_ids['end'];
-      $args[':locus_type'] = $type_ids['locus'];
-      $args[':reltype'] = $type_ids['instance_of'];
+
+      // Group into markers.
+      $query .= "\n" . ' GROUP BY marker.genetic_marker_name, qtl.linkage_group';
+
+      // Sort even though it is SLOW b/c ppl expect it.
+      $query .= "\n" . ' ORDER BY qtl.linkage_group ASC, min_qtl_start ASC';
+
+      // Handle paging.
+      $limit = $this::$num_items_per_page + 1;
+      $query .= "\n" . ' LIMIT ' . $limit . ' OFFSET ' . $offset;
     }
     // @debug dpm(strtr(str_replace(['{','}'], ['chado.', ''], $query), $args), 'query');
   }
@@ -317,7 +323,35 @@ class TraitQtlMarkerSearch extends ChadoCustomSearch {
 
     // @debug dpm($results, 'results');
     if (isset($form['results'])) {
+      $header = [
+        'map' => 'Map',
+        'marker_pos' => 'Marker Position',
+        'qtl_name' => 'QTL Name',
+        'qtl_peak' => 'QTL Peak',
+        'qtl_start' => 'QTL Start',
+        'qtl_end' => 'QTL End',
+      ];
+      $qtl_rows = [];
+      foreach($form['results']['#rows'] as $k => $row) {
+        $qtl = json_decode($row['qtl']);
 
+        $qtl_rows = [];
+        foreach($qtl as $q) {
+          $qtl_rows[] = [
+            'map' => $q->map_name,
+            'marker_pos' => $q->marker_pos,
+            'qtl_name' => $q->qtl_name,
+            'qtl_peak' => $q->qtl_peak,
+            'qtl_start' => $q->qtl_start,
+            'qtl_end' => $q->qtl_end,
+          ];
+        }
+
+        $form['results']['#rows'][$k]['qtl'] = theme('table', [
+          'header' => $header,
+          'rows' => $qtl_rows,
+        ]);
+      }
     }
   }
 
@@ -329,11 +363,11 @@ class TraitQtlMarkerSearch extends ChadoCustomSearch {
     $term_identifiers = [
       'start' => ['id' => 'MAIN:start'],
       'end' => ['id' => 'MAIN:end'],
-      'locus' => ['id' => 'MAIN:marker_locus'],
+      //'locus' => ['id' => 'MAIN:marker_locus'],
       //'lod' => ['id' => 'MAIN:lod'],
       //'addt_effect' => ['id' => 'MAIN:additive_effect'],
       //'parent' => ['id' => 'MAIN:direction'],
-      'instance_of' => ['id' => 'OBO_REL:instance_of'],
+      //'instance_of' => ['id' => 'OBO_REL:instance_of'],
     ];
     foreach ($term_identifiers as $name => $identifiers) {
       $term = chado_get_cvterm($identifiers);

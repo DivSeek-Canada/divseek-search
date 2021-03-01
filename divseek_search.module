@@ -61,4 +61,24 @@ function divseek_search_theme() {
 
 function divseek_search_flush_caches() {
   divseek_search_mview_phenotype_means();
+  divseek_search_cache_options();
+}
+
+/**
+ * Save options used in search form using variable_get/set().
+ */
+function divseek_search_cache_options() {
+  $sql= "SELECT value, value
+    FROM chado.featureprop
+    WHERE type_id IN (
+        SELECT cvterm_id FROM chado.cvterm WHERE name='marker_type'
+    )
+    AND feature_id IN (
+        SELECT feature_id FROM chado.feature WHERE type_id IN (
+            SELECT cvterm_id FROM chado.cvterm WHERE name='genetic_marker'
+        )
+    ) 
+    GROUP BY value";
+  $options = chado_query($sql)->fetchAllKeyed(0,0);
+  variable_set('divseek_search_marker_types', serialize($options));
 }

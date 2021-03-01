@@ -160,22 +160,18 @@ class GeneticMarkerSearch extends ChadoCustomSearch {
     if (isset($form_state['values'])) {
       $genus_default = $form_state['values']['genus'];
       $species_default = $form_state['values']['species'];
-      $phenovalue_default = $form_state['values']['phenotypic_value'];
     }
     elseif (isset($q['genus'])) {
       $genus_default = $q['genus'];
       $species_default = $q['species'];
-      $phenovalue_default = $q['phenotypic_value'];
     }
     else {
       $genus_default = NULL;
       $species_default = NULL;
-      $phenovalue_default = NULL;
     }
 
     $form['genus']['#default_value'] = $genus_default;
     $form['species']['#default_value'] = $species_default;
-    $form['phenotypic_value']['#default_value'] = $phenovalue_default;
 
     // -- Genus.
     $options = chado_query(
@@ -193,7 +189,7 @@ class GeneticMarkerSearch extends ChadoCustomSearch {
     $form['species']['#suffix'] = '</div>';
 
     // Make the marker type a drop-down.
-    $options = [];//unserialize(variable_get('kp_searches_marker_types', 'a:0{}'));
+    $options = unserialize(variable_get('divseek_search_marker_types', 'a:0{}'));
     $form['type']['#type'] = 'select';
     $form['type']['#options'] = $options;
     $form['type']['#empty_option'] = ' - Select -';
@@ -287,7 +283,7 @@ class GeneticMarkerSearch extends ChadoCustomSearch {
       LEFT JOIN {feature} olocparent ON olocparent.feature_id=original_loc.srcfeature_id
       LEFT JOIN {featureprop} type ON type.feature_id = marker.feature_id
         AND type.type_id IN
-          (SELECT cvterm_id FROM chado.cvterm WHERE name='additionalType') ";
+          (SELECT cvterm_id FROM chado.cvterm WHERE name='marker_type') ";
 
     $where = ["marker.type_id IN (SELECT cvterm_id FROM {cvterm} WHERE name='genetic_marker')"];
     $joins = [];

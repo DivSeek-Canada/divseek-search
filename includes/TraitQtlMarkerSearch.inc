@@ -159,6 +159,7 @@ class TraitQtlMarkerSearch extends ChadoCustomSearch {
     $form['s1']['trait'] = $form['trait'];
     $form['s1']['trait']['#weight'] = -9;
     $form['s1']['trait']['#suffix'] = '</div>';
+    $form['s1']['trait']['#disabled'] = TRUE;
     unset($form['genus'], $form['trait']);
 
     // -- QTL.
@@ -170,10 +171,12 @@ class TraitQtlMarkerSearch extends ChadoCustomSearch {
     ];
     $form['s2']['genetic_maps'] = $form['genetic_maps'];
     $form['s2']['genetic_maps']['#weight'] = -10;
+    $form['s2']['genetic_maps']['#disabled'] = TRUE;
     $form['s2']['genetic_maps']['#prefix'] = '<div id="tqtlm-s2qtl-flex">';
     $form['s2']['qtl'] = $form['qtl'];
     $form['s2']['qtl']['#weight'] = -9;
     $form['s2']['qtl']['#suffix'] = '</div>';
+    $form['s2']['qtl']['#disabled'] = TRUE;
     unset($form['genetic_maps'], $form['qtl']);
 
     // -- Germplasm.
@@ -205,6 +208,7 @@ class TraitQtlMarkerSearch extends ChadoCustomSearch {
 
 
     // Make into Drop-downs.
+    // @debug dpm($values, 'values for form');
     // -- Genus.
     $options = chado_query(
       "SELECT organism_genus FROM {mview_phenotype_average}
@@ -215,6 +219,7 @@ class TraitQtlMarkerSearch extends ChadoCustomSearch {
     // -- Trait.
     $options = [];
     if (!empty($values['genus'])) {
+      $form['s1']['trait']['#disabled'] = FALSE;
       $options = chado_query(
         "SELECT cvterm_id, name FROM {cvterm}
          WHERE cvterm_id IN (
@@ -227,6 +232,29 @@ class TraitQtlMarkerSearch extends ChadoCustomSearch {
     $form['s1']['trait']['#type'] = 'select';
     $form['s1']['trait']['#options'] = $options;
     $form['s1']['trait']['#empty_option'] = '- Select -';
+    // -- Genetic Map.
+    $options = [];
+    if (!empty($values['trait'])) {
+      $form['s2']['genetic_maps']['#disabled'] = FALSE;
+      $options = chado_query(
+        "SELECT map_id, map_name FROM {tripal_map_qtl_and_mtl_mview}
+         WHERE genus = :genus
+         AND cast(feature_id as int) IN (
+           SELECT feature_id FROM {feature_cvterm}
+           WHERE cvterm_id = :trait_id
+         )
+         ORDER BY map_name ASC",
+         [':trait_id' => $values['trait'], ':genus' => $values['genus']])
+         ->fetchAllKeyed(0,1);
+    }
+    $form['s2']['genetic_maps']['#type'] = 'select';
+    $form['s2']['genetic_maps']['#options'] = $options;
+    $form['s2']['genetic_maps']['#empty_option'] = '- Select -';
+    // -- QTL.
+    $options = [];
+    $form['s2']['qtl']['#type'] = 'select';
+    $form['s2']['qtl']['#options'] = $options;
+    $form['s2']['qtl']['#empty_option'] = '- Select -';
 
     return $form;
   }
@@ -350,6 +378,7 @@ class TraitQtlMarkerSearch extends ChadoCustomSearch {
         $form['results']['#rows'][$k]['qtl'] = theme('table', [
           'header' => $header,
           'rows' => $qtl_rows,
+          'sticky' => FALSE,
         ]);
       }
     }

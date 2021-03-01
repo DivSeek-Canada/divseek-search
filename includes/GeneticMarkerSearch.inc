@@ -4,7 +4,7 @@
  * Provides a search for SO:genetic_marker chado feature-based Tripal Content.
  *
  */
-class GeneticMarkerSearch extends KPSEARCH {
+class GeneticMarkerSearch extends ChadoCustomSearch {
 
   /**
    * The human readable title of this search. This will be used in listings
@@ -15,7 +15,7 @@ class GeneticMarkerSearch extends KPSEARCH {
   /**
    * The machine name of the module providing this search.
    */
-  public static $module = 'kp_searches';
+  public static $module = 'divseek_search';
 
   /**
    * A description of this search. This is shown at the top of the search page
@@ -64,7 +64,8 @@ class GeneticMarkerSearch extends KPSEARCH {
    */
   public static $attached = [
     'css' => [
-      'css/all_kp_searches.css',
+      'css/all_searches.css',
+      'css/genetic-marker.css',
     ],
     'js' => [],
   ];
@@ -153,14 +154,46 @@ class GeneticMarkerSearch extends KPSEARCH {
   public function form($form, $form_state) {
     $form = parent::form($form, $form_state);
 
-    // Add a crop selector.
-    $this->addCropFormElement($form, $form_state);
+    // Get Default Values.
+    //---------------------------------
+    $q = drupal_get_query_parameters();
+    if (isset($form_state['values'])) {
+      $genus_default = $form_state['values']['genus'];
+      $species_default = $form_state['values']['species'];
+      $phenovalue_default = $form_state['values']['phenotypic_value'];
+    }
+    elseif (isset($q['genus'])) {
+      $genus_default = $q['genus'];
+      $species_default = $q['species'];
+      $phenovalue_default = $q['phenotypic_value'];
+    }
+    else {
+      $genus_default = NULL;
+      $species_default = NULL;
+      $phenovalue_default = NULL;
+    }
 
-    // Add a Scientific name selector.
-    $this->addSpeciesFormElement($form, $form_state);
+    $form['genus']['#default_value'] = $genus_default;
+    $form['species']['#default_value'] = $species_default;
+    $form['phenotypic_value']['#default_value'] = $phenovalue_default;
+
+    // -- Genus.
+    $options = chado_query(
+      "SELECT genus FROM {organism}
+       WHERE organism_id IN (SELECT organism_id FROM {stock})
+       ORDER BY genus ASC")->fetchAllKeyed(0,0);
+    $form['genus']['#type'] = 'select';
+    $form['genus']['#options'] = $options;
+    $form['genus']['#empty_option'] = '- Select -';
+
+    // Scaffolding genus/species.
+    $form['genus']['#weight'] = -11;
+    $form['species']['#weight'] = -10;
+    $form['genus']['#prefix'] = '<div class="search-row">';
+    $form['species']['#suffix'] = '</div>';
 
     // Make the marker type a drop-down.
-    $options = unserialize(variable_get('kp_searches_marker_types', 'a:0{}'));
+    $options = [];//unserialize(variable_get('kp_searches_marker_types', 'a:0{}'));
     $form['type']['#type'] = 'select';
     $form['type']['#options'] = $options;
     $form['type']['#empty_option'] = ' - Select -';

@@ -106,6 +106,10 @@ class TraitQtlMarkerSearch extends ChadoCustomSearch {
         'title' => 'Genetic Maps',
         'help' => 'The name of the genetic maps you are interested in exploring.',
       ],
+      'linkage_group' => [
+        'title' => 'Linkage Group',
+        'help' => 'The name of the linkage group to look for QTL and markers on.',
+      ],
       'qtl' => [
         'title' => 'QTL',
         'help' => 'The QTL to look for markers within.',
@@ -173,11 +177,14 @@ class TraitQtlMarkerSearch extends ChadoCustomSearch {
     $form['s2']['genetic_maps']['#weight'] = -10;
     $form['s2']['genetic_maps']['#disabled'] = TRUE;
     $form['s2']['genetic_maps']['#prefix'] = '<div id="tqtlm-s2qtl-flex">';
+    $form['s2']['linkage_group'] = $form['linkage_group'];
+    $form['s2']['linkage_group']['#weight'] = -9;
+    $form['s2']['linkage_group']['#disabled'] = TRUE;
     $form['s2']['qtl'] = $form['qtl'];
-    $form['s2']['qtl']['#weight'] = -9;
+    $form['s2']['qtl']['#weight'] = -8;
     $form['s2']['qtl']['#suffix'] = '</div>';
     $form['s2']['qtl']['#disabled'] = TRUE;
-    unset($form['genetic_maps'], $form['qtl']);
+    unset($form['genetic_maps'], $form['linkage_group'], $form['qtl']);
 
     // -- Germplasm.
     /*
@@ -248,11 +255,53 @@ class TraitQtlMarkerSearch extends ChadoCustomSearch {
          ->fetchAllKeyed(0,1);
     }
     $form['s2']['genetic_maps']['#type'] = 'select';
+    $form['s2']['genetic_maps']['#multiple'] = TRUE;
     $form['s2']['genetic_maps']['#options'] = $options;
     $form['s2']['genetic_maps']['#empty_option'] = '- Select -';
+    // -- Linkage Group.
+    $options = [];
+    if (!empty($values['trait'])) {
+      $form['s2']['linkage_group']['#disabled'] = FALSE;
+      if (!empty($values['genetic_maps'])) {
+        $options = chado_query(
+          "SELECT linkage_group, linkage_group FROM {tripal_map_qtl_and_mtl_mview} qtl WHERE cast(qtl.feature_id as int) IN (SELECT feature_id FROM {feature_cvterm} WHERE cvterm_id=:trait_id) AND map_id IN (:map_id)
+          ORDER BY linkage_group ASC",
+          [':trait_id' => $values['trait'],
+            ':map_id' => $values['genetic_maps']])->fetchAllKeyed(0,1);
+      }
+      else {
+        $options = chado_query(
+          "SELECT linkage_group, linkage_group FROM {tripal_map_qtl_and_mtl_mview} qtl
+          WHERE cast(qtl.feature_id as int) IN (SELECT feature_id FROM {feature_cvterm} WHERE cvterm_id=:trait_id)",
+          [':trait_id' => $values['trait']])->fetchAllKeyed(0,1);
+      }
+    }
+    $form['s2']['linkage_group']['#type'] = 'select';
+    $form['s2']['linkage_group']['#multiple'] = TRUE;
+    $form['s2']['linkage_group']['#options'] = $options;
+    $form['s2']['linkage_group']['#empty_option'] = '- Select -';
     // -- QTL.
     $options = [];
+    if (!empty($values['trait'])) {
+      $form['s2']['qtl']['#disabled'] = FALSE;
+
+      $options_sql = "SELECT feature_id, marker_locus_name FROM {tripal_map_qtl_and_mtl_mview} qtl";
+      $where = ["cast(qtl.feature_id as int) IN (SELECT feature_id FROM {feature_cvterm} WHERE cvterm_id=:trait_id)"];
+      $options_args = [':trait_id' => $values['trait']];
+
+      if (!empty($values['genetic_maps'])) {
+        $where[] = "map_id IN (:map_id)";
+        $options_args[':map_id'] = $values['genetic_maps'];
+      }
+      if (!empty($values['linkage_group'])) {
+        $where[] = "linkage_group IN (:lg_id)";
+        $options_args[':lg_id'] = $values['linkage_group'];
+      }
+      $options_sql .= " WHERE " . implode(' AND ', $where);
+      $options = chado_query($options_sql, $options_args)->fetchAllKeyed(0,1);
+    }
     $form['s2']['qtl']['#type'] = 'select';
+    $form['s2']['qtl']['#multiple'] = TRUE;
     $form['s2']['qtl']['#options'] = $options;
     $form['s2']['qtl']['#empty_option'] = '- Select -';
 
@@ -321,6 +370,33 @@ class TraitQtlMarkerSearch extends ChadoCustomSearch {
       $args[':trait_id'] = $filter_results['trait'];
       $args[':start_type'] = $type_ids['start'];
       $args[':end_type'] = $type_ids['end'];
+
+      $where = [];
+      $joins = [];
+
+      // -- Genetic Maps.
+      if (!empty($filter_results['genetic_maps'])) {
+        $where[] = "qtl.map_id IN (:map_id)";
+        $args[':map_id'] = $filter_results['genetic_maps'];
+      }
+      // -- Linkage Group.
+      if (!empty($filter_results['linkage_group'])) {
+        $where[] = "qtl.linkage_group IN (:lgid)";
+        $args[':lgid'] = $filter_results['linkage_group'];
+      }
+      // -- QTL.
+      if (!empty($filter_results['qtl'])) {
+        $where[] = "qtl.feature_id IN (:qtl_id)";
+        $args[':qtl_id'] = $filter_results['qtl'];
+      }
+
+      // Finally, add it to the query.
+      if (!empty($joins)) {
+        $query .= "\n" . implode("\n",$joins);
+      }
+      if (!empty($where)) {
+        $query .= "\n" . ' AND ' . implode(' AND ',$where);
+      }
 
       // Group into markers.
       $query .= "\n" . ' GROUP BY marker.genetic_marker_name, qtl.linkage_group';

@@ -77,8 +77,15 @@ function divseek_search_cache_options() {
         SELECT feature_id FROM chado.feature WHERE type_id IN (
             SELECT cvterm_id FROM chado.cvterm WHERE name='genetic_marker'
         )
-    ) 
+    )
     GROUP BY value";
   $options = chado_query($sql)->fetchAllKeyed(0,0);
   variable_set('divseek_search_marker_types', serialize($options));
+}
+
+/**
+ * Alter the Genotype Matrix.
+ */
+function divseek_search_form_nd_genotypes_matrix_filter_form_alter(&$form, &$form_state, $form_id) {
+  $form['#attached']['css'][] = drupal_get_path('module', 'divseek_search') . '/css/genotype-matrix.css';
 }

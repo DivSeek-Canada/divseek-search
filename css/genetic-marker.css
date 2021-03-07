@@ -1,0 +1,34 @@
+/**
+ * Genetic Marker Search.
+ */
+#chado-custom-search-form .seq-range-element .form-type-textfield label {
+  display: none;
+}
+#chado-custom-search-form .seq-range-element .form-type-textfield .description {
+  display: none;
+}
+#chado-custom-search-form .seq-range-element .form-item {
+  display: inline-block;
+  margin-bottom: 2px;
+}
+#chado-custom-search-form .seq-range-element.form-item {
+  margin-left: 15px;
+}
+#chado-custom-search-form .seq-range-element input.form-text {
+  width: 150px;
+}
+#chado-custom-search-form .seq-range-element input#edit-start-backbone {
+  width: 300px;
+}
+
+#chado-custom-search-form .form-item-type select,
+  #chado-custom-search-form .form-type-textfield input {
+
+  width: 100%;
+}
+
+#chado-custom-search-form .form-item-type,
+  #chado-custom-search-form .form-type-textfield {
+
+  margin-left: 15px;
+}

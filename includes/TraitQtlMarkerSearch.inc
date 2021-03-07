@@ -247,7 +247,7 @@ class TraitQtlMarkerSearch extends ChadoCustomSearch {
            SELECT trait_id
            FROM {mview_phenotype_average}
            WHERE organism_genus=:genus)
-         AND cvterm_id IN (SELECT cvterm_id FROM {feature_cvterm)
+         AND cvterm_id IN (SELECT cvterm_id FROM {feature_cvterm})
          ORDER BY name ASC",
          [':genus' => $values['genus']])->fetchAllKeyed(0,1);
     }

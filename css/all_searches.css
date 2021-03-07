@@ -77,22 +77,24 @@ div.phenotypic-statement  .form-item-phenotypic-value-operator select {
   padding: 5px 15px;
   border-right: 1px solid #E8E8E8;
   flex: 0 0 100px;
+  color: white;
+  font-weight: bold;
 }
 #chado-custom-search-form .result-row .result-row-body {
   padding: 5px 15px;
 }
 #chado-custom-search-form .result-row .result-row-trait.trait1 {
-  background-color: #d3d6b1; // green
+  background-color: #3C7C51; // Amazon
 }
 #chado-custom-search-form .result-row .result-row-trait.trait2 {
-  background-color: #e8dda9; // yellow
+  background-color: #B38D05; // Dark Goldenrod
 }
 #chado-custom-search-form .result-row .result-row-trait.trait3 {
-  background-color: #c5c2ce; // purple
+  background-color: #272F3F; // Gunmetal
 }
 #chado-custom-search-form .result-row .result-row-trait.trait4 {
-  background-color: #d4dadd; // blue
+  background-color: #A7394F; // Amaranth Purple
 }
 #chado-custom-search-form .result-row .result-row-trait.trait5 {
-  background-color: #dbc5c7; // red
+  background-color: #0194CA; // Blue NCS
 }

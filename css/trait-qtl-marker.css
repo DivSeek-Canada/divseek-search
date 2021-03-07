@@ -15,6 +15,12 @@
 #tqtlm-s1trait-flex .form-item-trait {
 	width: 70%;
 }
+#tqtlm-s1trait-flex .form-item {
+	width: 45%;
+}
+#tqtlm-s1trait-flex .form-item select {
+	width: 100%;
+}
 
 #tqtlm-s2qtl-flex {
 	display: inline-flex;
@@ -27,6 +33,13 @@
 }
 #tqtlm-s2qtl-flex .form-item-qtl {
 	width: 70%;
+}
+#tqtlm-s2qtl-flex .form-item {
+	width: 30%;
+	margin-right: 15px;
+}
+#tqtlm-s2qtl-flex .form-item select {
+	width: 100%;
 }
 
 .tooltip {

@@ -213,6 +213,20 @@ class TraitQtlMarkerSearch extends ChadoCustomSearch {
       'effect' => 'fade',
     ];
 
+    // -- Select genetic map/lg should refresh genetic map & QTL fieldset.
+    $form['s2']['genetic_maps']['#ajax'] = [
+      'callback' => 'ajax_tqtlm_refreshqtl_callback',
+      'wrapper' => 'tqtlm-s2qtl',
+      'method' => 'replace',
+      'effect' => 'fade',
+    ];
+    $form['s2']['linkage_group']['#ajax'] = [
+      'callback' => 'ajax_tqtlm_refreshqtl_callback',
+      'wrapper' => 'tqtlm-s2qtl',
+      'method' => 'replace',
+      'effect' => 'fade',
+    ];
+
 
     // Make into Drop-downs.
     // @debug dpm($values, 'values for form');

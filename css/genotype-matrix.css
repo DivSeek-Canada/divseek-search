@@ -1,0 +1,15 @@
+
+#nd-genotypes-matrix-filter-form .form-type-multiple-organism-stock select {
+	padding: 6px;
+	height: 30px;
+}
+span.image-button input {
+	margin-left: 0;
+	padding-top: 4px;
+}
+.matrix-controls {
+	top: 0;
+}
+.region .pager.item-list ul li {
+	background: white;
+}
